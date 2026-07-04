@@ -1,0 +1,1015 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TradeWize Team Delivery Board</title>
+<style>
+  :root{
+    --bg:#f5f5f7; --card:#ffffff; --card-2:#fbfbfd;
+    --ink:#1d1d1f; --ink-2:#6e6e73; --ink-3:#aeaeb2;
+    --hair:rgba(60,60,67,.14); --hair-2:rgba(60,60,67,.08); --track:#e8e8ed;
+    --accent:#0071e3; --accent-press:#0060c2;
+    --ref:#2a78d6; --ref-tint:rgba(42,120,214,.09);
+    --cur:#1baf7a; --cur-tint:rgba(27,175,122,.09);
+    --done:#248a3d; --done-bg:rgba(52,199,89,.14);
+    --doing:#0071e3; --doing-bg:rgba(0,113,227,.10);
+    --late:#d70015; --late-bg:rgba(255,59,48,.12);
+    --risk:#c93400; --risk-bg:rgba(255,149,0,.14);
+    --r-lg:18px; --r-md:12px; --r-sm:8px;
+    --ease:cubic-bezier(.32,.72,.28,1);
+    --shadow-1:0 1px 2px rgba(0,0,0,.04),0 8px 28px rgba(0,0,0,.05);
+    --shadow-2:0 2px 8px rgba(0,0,0,.08),0 16px 48px rgba(0,0,0,.10);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+       font:14px/1.47 -apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+       -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .num{font-variant-numeric:tabular-nums}
+  ::selection{background:rgba(0,113,227,.18)}
+  .wrap{max-width:1360px;margin:0 auto;padding:8px 22px 64px}
+
+  /* ── Frosted chrome (Apple nav style) ── */
+  header.top{position:sticky;top:0;z-index:30;
+    background:rgba(251,251,253,.78);
+    -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:1px solid var(--hair-2)}
+  .top-in{max-width:1360px;margin:0 auto;padding:14px 22px 4px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  h1{font:700 21px/1.2 -apple-system,"SF Pro Display","Segoe UI",sans-serif;letter-spacing:-.022em;margin:0;color:var(--ink)}
+  .sub{color:var(--ink-2);font-size:12px;letter-spacing:-.008em}
+  .spacer{flex:1}
+
+  button,.btn,select,input{font:500 13px/1.25 inherit;border:1px solid var(--hair);
+    background:var(--card);color:var(--ink);padding:8px 14px;border-radius:980px;cursor:pointer;
+    transition:background .22s var(--ease),border-color .22s var(--ease),transform .18s var(--ease),box-shadow .22s var(--ease)}
+  select,input{border-radius:10px;cursor:auto;background:var(--card)}
+  button:hover{background:var(--card-2);border-color:rgba(60,60,67,.26)}
+  button:active{transform:scale(.97)}
+  button:focus-visible,.chip:focus-visible,input:focus-visible,select:focus-visible,th.sortable:focus-visible{
+    outline:3px solid rgba(0,113,227,.4);outline-offset:1px}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .btn-primary:hover{background:var(--accent-press);border-color:var(--accent-press)}
+  .btn-quiet{border-color:transparent;background:transparent;color:var(--accent)}
+  .btn-quiet:hover{background:rgba(0,113,227,.08);border-color:transparent}
+  header.top button{background:rgba(255,255,255,.65)}
+  header.top .btn-primary{background:var(--accent);color:#fff}
+  header.top .btn-quiet{background:transparent;color:var(--accent)}
+
+  /* ── Segmented control tabs ── */
+  nav.tabs{max-width:1360px;margin:0 auto;padding:6px 22px 12px;display:flex;gap:14px;align-items:center}
+  nav.tabs{--seg:#e9e9ee}
+  nav.tabs button{border:none;background:transparent;color:var(--ink-2);font-weight:500;font-size:13px;
+    padding:7px 16px;border-radius:980px;transition:all .26s var(--ease)}
+  nav.tabs button:hover{color:var(--ink)}
+  nav.tabs button.on{background:var(--card);color:var(--ink);font-weight:600;
+    box-shadow:0 1px 3px rgba(0,0,0,.10),0 3px 10px rgba(0,0,0,.06)}
+  nav.tabs>button{background:var(--seg)}
+  nav.tabs>button:first-of-type{margin-left:-2px}
+  .monthbar{display:flex;gap:6px;margin-left:auto;background:var(--seg);border-radius:980px;padding:3px}
+  .monthbar button{border:none;background:transparent;padding:5px 13px;border-radius:980px;font-size:12.5px;color:var(--ink-2)}
+  .monthbar button.on{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  .tabpane{display:none}
+  .tabpane.on{display:block;animation:pane .38s var(--ease)}
+  @keyframes pane{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .lbl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+
+  /* ── Tiles ── */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:14px 0 18px}
+  .tile{background:var(--card);border:1px solid var(--hair-2);border-radius:var(--r-lg);padding:18px 20px;
+    display:flex;gap:16px;align-items:center;box-shadow:var(--shadow-1);
+    animation:rise .5s var(--ease) backwards}
+  .tiles .tile:nth-child(2){animation-delay:.05s}.tiles .tile:nth-child(3){animation-delay:.1s}.tiles .tile:nth-child(4){animation-delay:.15s}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .tile .big{font:700 30px/1.1 -apple-system,"SF Pro Display","Segoe UI",sans-serif;letter-spacing:-.03em}
+  .tile .sm{font-size:12px;color:var(--ink-2);margin-top:2px}
+
+  section.card{background:var(--card);border:1px solid var(--hair-2);border-radius:var(--r-lg);
+    padding:20px 22px;margin-bottom:18px;box-shadow:var(--shadow-1);animation:rise .5s var(--ease) backwards}
+  section.card>h2{font:600 16px/1.3 -apple-system,"SF Pro Display",sans-serif;letter-spacing:-.018em;margin:0 0 4px}
+  section.card>.hint{font-size:12.5px;color:var(--ink-2);margin:0 0 14px}
+
+  /* ── Kanban matrix ── */
+  .mtx-scroll,.tbl-scroll{overflow-x:auto;border-radius:var(--r-md)}
+  table.mtx{border-collapse:separate;border-spacing:0;width:100%;min-width:1000px}
+  .mtx th,.mtx td{border-bottom:1px solid var(--hair-2);border-right:1px solid var(--hair-2);
+    padding:10px 12px;vertical-align:top;text-align:left}
+  .mtx tr>*:last-child{border-right:none}
+  .mtx thead th{background:var(--card-2);font-size:12px;font-weight:600;color:var(--ink-2)}
+  .mtx thead .grp{text-align:center;font-size:12px;font-weight:700;letter-spacing:.05em}
+  .mtx thead .grp.ref{background:var(--ref-tint);color:#1c5cab;box-shadow:inset 0 -2px 0 var(--ref)}
+  .mtx thead .grp.cur{background:var(--cur-tint);color:#0d7a54;box-shadow:inset 0 -2px 0 var(--cur)}
+  .mtx .wk{white-space:nowrap;font-weight:600;font-size:13px;background:var(--card-2);width:124px}
+  .mtx .wk .dates{display:block;font-weight:400;font-size:11.5px;color:var(--ink-3);margin-top:1px}
+  .mtx .wk .wpct{display:block;margin-top:10px;font:700 24px/1 -apple-system,"SF Pro Display",sans-serif;letter-spacing:-.03em}
+  .mtx .wk .wdone{display:block;font-size:11px;color:var(--ink-3);font-weight:400;margin-top:3px}
+  .mtx td.cell{min-width:205px;transition:background .25s var(--ease),box-shadow .25s var(--ease)}
+  .mtx td.cell.ty-f{background:#f7f9fc}
+  .mtx td.cell.ty-b{background:#fbf7f4}
+  .mtx thead th.ty-f{background:#eef3f9;box-shadow:inset 0 -2px 0 #7c97ba;color:#41546e}
+  .mtx thead th.ty-b{background:#f7efe9;box-shadow:inset 0 -2px 0 #bd8b74;color:#6e5344}
+  .mtx td.cell.dragover{background:rgba(0,113,227,.07);box-shadow:inset 0 0 0 2px var(--accent);border-radius:10px}
+  .mtx .cellsum{font-size:11px;color:var(--ink-3);margin-top:8px;letter-spacing:-.005em}
+  .mtx tfoot td{background:var(--card-2);font-weight:700}
+  .mono-dash{color:var(--ink-3)}
+
+  /* ── Task cards ── */
+  .chip{display:flex;gap:9px;align-items:flex-start;width:100%;text-align:left;background:var(--card);
+    border:1px solid var(--hair-2);border-left:3px solid #d5d5da;border-radius:11px;
+    padding:9px 11px;margin:0 0 7px;cursor:grab;font:inherit;position:relative;
+    box-shadow:0 1px 2px rgba(0,0,0,.05);
+    animation:rise .45s var(--ease) backwards}
+  .chip:nth-child(2){animation-delay:.04s}.chip:nth-child(3){animation-delay:.08s}
+  .chip:nth-child(4){animation-delay:.12s}.chip:nth-child(5){animation-delay:.16s}.chip:nth-child(n+6){animation-delay:.2s}
+  .chip:active{cursor:grabbing}
+  .chip.doing{border-left-color:var(--doing)}
+  .chip.done{border-left-color:#34c759;background:linear-gradient(0deg,rgba(52,199,89,.05),var(--card) 65%)}
+  .chip.late{border-left-color:#ff3b30}
+  .chip.dragging{opacity:.4;transform:scale(.97)}
+  .st{flex:none;width:16px;height:16px;border-radius:50%;margin-top:1px;position:relative;transition:all .3s var(--ease)}
+  .st.zero{border:1.5px solid var(--ink-3);background:transparent}
+  .st.part{background:conic-gradient(var(--doing) calc(var(--p)*1%), var(--track) 0)}
+  .st.part::after{content:"";position:absolute;inset:3.5px;background:var(--card);border-radius:50%}
+  .st.full{background:#34c759}
+  .st.full::after{content:"✓";position:absolute;inset:0;color:#fff;font-size:10px;line-height:16px;text-align:center;font-weight:700}
+  .chip .tx{min-width:0;flex:1}
+  .chip .code{font-weight:700;font-size:12.5px;letter-spacing:-.01em}
+  .chip .flag{font-size:9px;font-weight:700;letter-spacing:.05em;padding:2px 7px;border-radius:980px;margin-left:6px;vertical-align:1px}
+  .flag.late{background:var(--late-bg);color:var(--late)}
+  .flag.risk{background:var(--risk-bg);color:var(--risk)}
+  .chip .name{display:block;font-size:11.5px;color:var(--ink-2);line-height:1.35;letter-spacing:-.005em;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .chip .who{display:block;font-size:10.5px;color:var(--ink-3)}
+  .chip .pct{flex:none;font:700 12.5px/1 -apple-system,"SF Pro Display",sans-serif;color:var(--ink-2)}
+  .chip.done .pct{color:var(--done)}
+  .chip .meta{display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap}
+  .chip .md{font-size:10px;font-weight:600;color:var(--ink-2);background:var(--track);border-radius:6px;padding:1.5px 7px}
+  .pri{font-size:9px;font-weight:700;letter-spacing:.05em;border-radius:6px;padding:1.5px 7px}
+  .pri.P0{background:#ff3b30;color:#fff}
+  .pri.P1{background:#ff9500;color:#fff}
+  .pri.P2{background:#ffcc00;color:#5c4a00}
+  .pri.STG{background:#af52de;color:#fff}
+
+  /* ── Quick filters ── */
+  .qf{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+  .qf .lbl{margin-right:4px}
+  .qf .fchip{border:1px solid var(--hair);background:var(--card);border-radius:980px;
+    padding:6px 13px;font-size:12px;font-weight:500;cursor:pointer;
+    transition:all .22s var(--ease)}
+  .qf .fchip:hover{border-color:rgba(60,60,67,.3)}
+  .qf .fchip.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+  .qf .av{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--hair);background:var(--card);
+    font-size:10.5px;font-weight:700;color:var(--ink-2);display:inline-flex;align-items:center;justify-content:center;
+    cursor:pointer;transition:all .22s var(--ease)}
+  .qf .av:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.10)}
+  .qf .av.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+  /* ── Week daily track ── */
+  .wk-daily{margin-top:10px}
+  .wk-daily .cap{font-size:9px;color:var(--ink-3);font-weight:600;letter-spacing:.07em}
+  .wk-daily .cells{display:flex;gap:2px;margin-top:3px}
+  .wk-daily input{width:23px;height:21px;padding:0;border:1px solid var(--hair-2);border-radius:6px;
+    font-size:9.5px;text-align:center;background:var(--card)}
+  .wk-daily input:focus{border-color:var(--accent)}
+  .wk-daily .bars{display:flex;gap:2px;align-items:flex-end;height:18px;margin-top:3px}
+  .wk-daily .bars i{width:23px;background:linear-gradient(180deg,#4a94e8,var(--ref));border-radius:3px 3px 0 0;
+    display:block;min-height:2px;transition:height .4s var(--ease)}
+
+  /* ── Charts ── */
+  .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
+  svg text{font:11.5px -apple-system,"SF Pro Text","Segoe UI",sans-serif;fill:var(--ink-2)}
+  svg .val{font-weight:600;fill:var(--ink)}
+  .legend{display:flex;gap:18px;font-size:12px;color:var(--ink-2);margin-top:10px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3.5px;margin-right:6px;vertical-align:-1px}
+
+  /* ── Data tables (Apple list style: hairline rows, no vertical lines) ── */
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .toolbar input[type=search]{min-width:240px;border-radius:10px;background:var(--track);border-color:transparent;padding:8px 14px}
+  .toolbar input[type=search]:focus{background:var(--card);border-color:var(--accent)}
+  table.grid{border-collapse:collapse;width:100%;min-width:1100px;font-size:12.5px}
+  .grid th,.grid td{border-bottom:1px solid var(--hair-2);padding:9px 10px;text-align:left;vertical-align:middle;background:var(--card)}
+  .grid thead th{background:var(--card);position:sticky;top:0;white-space:nowrap;z-index:1;
+    font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);
+    border-bottom:1px solid var(--hair)}
+  .grid th.sortable{cursor:pointer;transition:color .2s var(--ease)}
+  .grid th.sortable:hover{color:var(--ink)}
+  .grid th.sortable::after{content:"↕";color:var(--ink-3);margin-left:5px;font-size:10px}
+  .grid th.sorted-asc::after{content:"↑";color:var(--accent)}
+  .grid th.sorted-desc::after{content:"↓";color:var(--accent)}
+  .grid td.r{text-align:right}.grid td.c,.grid th.c{text-align:center}
+  .grid tbody tr{transition:background .18s var(--ease)}
+  .grid tbody tr:hover td{background:var(--card-2)}
+  .grid .codebtn{background:none;border:none;padding:0;color:var(--accent);font-weight:600;cursor:pointer;border-radius:4px}
+  .grid .codebtn:hover{text-decoration:underline;background:none;transform:none}
+  .grid select,.grid input{padding:5px 8px;border-radius:8px;font-size:12px;max-width:140px}
+  .grid input.est{width:60px;text-align:center;background:#fff8e6;border-color:rgba(255,204,0,.4)}
+  .grid input.prog{width:56px;text-align:center}
+  .grid a{color:var(--accent);text-decoration:none}
+  .grid a:hover{text-decoration:underline}
+
+  .tag{display:inline-block;padding:2.5px 9px;border-radius:980px;font-size:11px;font-weight:600;white-space:nowrap;letter-spacing:-.005em}
+  .tag.ref{background:var(--ref-tint);color:#1c5cab}.tag.cur{background:var(--cur-tint);color:#0d7a54}
+  .tag.bug{background:var(--late-bg);color:#a02020}.tag.feature{background:var(--track);color:var(--ink-2)}
+  .tag.p0{background:#ff3b30;color:#fff}.tag.p1{background:#ff9500;color:#fff}
+  .tag.p2{background:#ffcc00;color:#5c4a00}.tag.stg{background:#af52de;color:#fff}
+  .tag.plain{background:var(--track);color:var(--ink-2)}
+  .tag.status-done{background:var(--done-bg);color:var(--done)}
+  .tag.status-doing{background:var(--doing-bg);color:var(--accent)}
+  .tag.status-todo{background:var(--track);color:var(--ink-3)}
+  .tag.status-late{background:var(--late-bg);color:var(--late)}
+  .tagband td{background:var(--card-2)!important;font-weight:600;font-size:12px}
+  .newrow td{background:rgba(52,199,89,.06)!important}
+
+  .bar{height:8px;background:var(--track);border-radius:980px;overflow:hidden;min-width:90px}
+  .bar i{display:block;height:100%;border-radius:980px;transition:width .5s var(--ease)}
+  .owners-cell{display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-width:150px}
+  .owner-pill{background:var(--track);border:none;border-radius:980px;padding:2.5px 10px;font-size:11px;font-weight:600}
+  .owner-pill button{border:none;background:none;padding:0 0 0 5px;color:var(--ink-3);font-size:11px;cursor:pointer}
+  .owner-pill button:hover{color:var(--late)}
+  .addown{border:1px dashed var(--hair);background:none;border-radius:980px;padding:2.5px 10px;font-size:11px;color:var(--ink-3)}
+  .addown:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* ── Timeline bars ── */
+  .tl-bar{position:relative;height:22px;background:var(--track);border-radius:7px;overflow:hidden}
+  .tl-bar i{position:absolute;inset:0 auto 0 0;border-radius:7px;transition:width .5s var(--ease)}
+  .tl-bar span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:10.5px;font-weight:600;color:var(--ink)}
+
+  /* ── Dialogs (sheet-like spring pop) ── */
+  dialog{border:none;border-radius:20px;padding:0;max-width:680px;width:calc(100% - 32px);
+    box-shadow:var(--shadow-2);background:var(--card)}
+  dialog::backdrop{background:rgba(28,28,30,.4);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+  dialog[open]{animation:pop .34s var(--ease)}
+  @keyframes pop{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}
+  .m-head{display:flex;gap:12px;align-items:flex-start;padding:20px 22px 14px;border-bottom:1px solid var(--hair-2)}
+  .m-head h3{margin:3px 0 0;font:600 17px/1.35 -apple-system,"SF Pro Display",sans-serif;letter-spacing:-.02em}
+  .m-head .code{font-size:12px;font-weight:600;color:var(--ink-2)}
+  .m-close{margin-left:auto;flex:none;width:30px;height:30px;padding:0;border-radius:50%;
+    background:var(--track);border:none;color:var(--ink-2);font-size:13px;line-height:30px}
+  .m-close:hover{background:#dcdce1;color:var(--ink)}
+  .m-body{padding:16px 22px 22px;display:grid;gap:16px}
+  .m-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:13px;font-size:12.5px}
+  .m-grid .k{color:var(--ink-3);font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+  .m-grid .v{font-weight:600}
+  .m-grid select,.m-grid input{width:100%;padding:7px 10px;border:1px solid var(--hair);border-radius:10px;font:500 13px/1.2 inherit}
+  .own-picker{display:flex;flex-wrap:wrap;gap:7px}
+  .own-opt{border:1px solid var(--hair);border-radius:980px;padding:6px 13px;font-size:12px;font-weight:500;
+    cursor:pointer;background:var(--card);transition:all .22s var(--ease)}
+  .own-opt:hover{border-color:rgba(60,60,67,.3);transform:translateY(-1px)}
+  .own-opt.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .prog-row{display:flex;align-items:center;gap:12px}
+  .prog-row input[type=range]{flex:1;padding:0;border:none;background:transparent;accent-color:var(--accent);height:24px}
+  .prog-quick{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+  .prog-quick button{padding:5px 11px;font-size:11.5px;border-radius:980px}
+  .m-note{font-size:12px;color:var(--ink-2);background:var(--card-2);border:1px solid var(--hair-2);border-radius:12px;padding:12px 14px;line-height:1.5}
+  .danger{color:var(--late)}
+  footer.note{color:var(--ink-3);font-size:12px;border-top:1px solid var(--hair-2);padding-top:16px;line-height:1.6}
+  form.f{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:13px;padding:18px 22px 22px}
+  form.f label{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);display:block;margin-bottom:5px}
+  form.f input,form.f select{width:100%;padding:8px 10px;border:1px solid var(--hair);border-radius:10px;font:500 13px/1.2 inherit}
+  form.f .full{grid-column:1/-1}
+  form.f .actions{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+    html{scroll-behavior:auto}
+  }
+</style>
+
+<header class="top">
+  <div class="top-in">
+    <div><h1>TradeWize Team Delivery Board</h1><div class="sub num" id="subline"></div></div>
+    <div class="spacer"></div>
+    <button id="btnAddTask" class="btn-primary">+ Task</button>
+    <button id="btnImport">Import</button>
+    <button id="btnExport">Export</button>
+    <input type="file" id="fileIn" accept="application/json" hidden>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button data-tab="dash" class="on">Dashboard</button>
+    <button data-tab="backlog">Backlog</button>
+    <button data-tab="timeline">Timeline</button>
+    <button data-tab="team">Team</button>
+    <div class="monthbar" id="monthbar"></div>
+  </nav>
+</header>
+
+<div class="wrap">
+  <div id="pane-dash" class="tabpane on">
+    <div class="tiles" id="tiles"></div>
+    <section class="card">
+      <h2>Delivery board</h2>
+      <p class="hint">Drag a card to any cell to change its week, team or type. Every linked figure updates instantly.
+        Card stripe: <span class="tag status-todo">not started</span> <span class="tag status-doing">in progress</span>
+        <span class="tag status-done">done</span> <span class="tag status-late">late</span>. Click a card for details.</p>
+      <div class="qf" id="qf"></div>
+      <div class="mtx-scroll"><table class="mtx" id="mtx"></table></div>
+    </section>
+    <div class="charts">
+      <section class="card"><h2>Progress by priority</h2>
+        <p class="hint">How the client's P0 → P3 items are moving.</p>
+        <div id="chPri"></div>
+      </section>
+      <section class="card"><h2>Weekly progress by team</h2>
+        <p class="hint">Weighted by man-days (senior estimate overrides AI when filled).</p>
+        <div id="chWeekly"></div>
+        <div class="legend"><span><i style="background:var(--ref)"></i>Refactor</span><span><i style="background:var(--cur)"></i>Current</span></div>
+      </section>
+      <section class="card"><h2>Planned load vs capacity <span class="lbl" style="margin-left:6px">man-days</span></h2>
+        <p class="hint">Stacked = planned work · black marker = capacity.</p>
+        <div id="chLoad"></div>
+        <div class="legend"><span><i style="background:var(--ref)"></i>Refactor</span><span><i style="background:var(--cur)"></i>Current</span><span><i style="background:none;border-left:2px solid var(--ink)"></i>&nbsp;Capacity</span></div>
+      </section>
+    </div>
+  </div>
+
+  <div id="pane-backlog" class="tabpane">
+    <section class="card">
+      <h2>Backlog: all tasks in <span id="blMonth"></span></h2>
+      <p class="hint">Edit owners, estimates, progress, week or month inline. Click a code for the full card.</p>
+      <div class="toolbar">
+        <input type="search" id="q" placeholder="Search code, name, Jira, owner…">
+        <select id="fWeek"><option value="">Week: all</option></select>
+        <select id="fTeam"><option value="">Team: all</option><option>Refactor</option><option>Current</option></select>
+        <select id="fType"><option value="">Type: all</option><option>Feature</option><option>Bug</option></select>
+        <select id="fPri"><option value="">Priority: all</option><option>P0</option><option>P1</option><option>P2</option><option>STG</option></select>
+        <select id="fStat"><option value="">Status: all</option><option value="todo">Not started</option><option value="doing">In progress</option><option value="done">Done</option><option value="late">Late</option></select>
+        <span class="sub num" id="countLine"></span>
+      </div>
+      <div class="tbl-scroll"><table class="grid" id="blTable"></table></div>
+    </section>
+  </div>
+
+  <div id="pane-timeline" class="tabpane">
+    <section class="card">
+      <h2>Timeline: <span id="tlMonth"></span></h2>
+      <p class="hint">Tasks grouped by work stream; the bar fills with progress. Blue = in progress, green = done, red = late.</p>
+      <div class="tbl-scroll"><table class="grid" id="tlTable"></table></div>
+    </section>
+  </div>
+
+  <div id="pane-team" class="tabpane">
+    <section class="card">
+      <h2>Team & workload</h2>
+      <p class="hint">Add, edit or remove members; they instantly become assignable. Load = Σ estimates of owned tasks
+        (split evenly when a task has several owners).</p>
+      <div class="toolbar"><button id="btnAddMember" class="btn-primary">+ Member</button></div>
+      <div class="tbl-scroll"><table class="grid" id="teamTable"></table></div>
+    </section>
+  </div>
+
+  <footer class="note">
+    This board is the client-facing report: timeline, workload and progress of the remote team. Jira stays the dev tool of record.
+    Edits live in <b>your browser only</b> until exported to BA, who republishes. The URL never changes.
+  </footer>
+</div>
+
+<dialog id="dlg"></dialog>
+<dialog id="dlgForm"></dialog>
+<dialog id="dlgMsg" style="max-width:420px"></dialog>
+
+<script>
+const DATA = {"updated":"2026-07-03","months":[{"id":"T7","label":"July 2026","tasksMonth":true,"capacity":{"W1":41,"W2":52,"W3":52,"W4":52},"weeks":[{"id":"W1","range":"Jul 06-12","start":"2026-07-06","end":"2026-07-12","daily":{}},{"id":"W2","range":"Jul 13-19","start":"2026-07-13","end":"2026-07-19","daily":{}},{"id":"W3","range":"Jul 20-26","start":"2026-07-20","end":"2026-07-26","daily":{}},{"id":"W4","range":"Jul 27-31 (5 days)","start":"2026-07-27","end":"2026-07-31","daily":{}}]},{"id":"T8","label":"August 2026","tasksMonth":false,"capacity":{"W1":55,"W2":55,"W3":55,"W4":55,"W5":11},"weeks":[{"id":"W1","range":"Aug 03-09","start":"2026-08-03","end":"2026-08-09","daily":{}},{"id":"W2","range":"Aug 10-16","start":"2026-08-10","end":"2026-08-16","daily":{}},{"id":"W3","range":"Aug 17-23","start":"2026-08-17","end":"2026-08-23","daily":{}},{"id":"W4","range":"Aug 24-30","start":"2026-08-24","end":"2026-08-30","daily":{}},{"id":"W5","range":"Aug 31 (1 day)","start":"2026-08-31","end":"2026-08-31","daily":{}}]}],"tasks":[{"code":"F3.1","jira":"TD-126","name":"Timezone core - server UTC + central get-timezone helper (sub TD-165)","type":"Feature","group":"Refactor","priority":"P0","cluster":"Timezone","week":"W1","owner":"","est_md":4.5,"est_actual_md":null,"daily":{},"pct":0,"note":"Consolidate all timezone tickets under epic TD-126; fix the core helper instead of ~84 call sites","source":"Feroz"},{"code":"F1.1","jira":"TD-162","name":"PO restructuring - finalize design + NAS numbering format","type":"Feature","group":"Current","priority":"P0","cluster":"PO & Pay","week":"W1","owner":"","est_md":3,"est_actual_md":null,"daily":{},"pct":0,"note":"PENDING DESIGN: design must be finalized in W1 or W2 slips","source":"Feroz"},{"code":"F2.1","jira":"TD-162","name":"Daily payments - backend preparation (trigger, approval, calculation)","type":"Feature","group":"Current","priority":"P0","cluster":"PO & Pay","week":"W1","owner":"","est_md":3,"est_actual_md":null,"daily":{},"pct":0,"note":"Split a dedicated backend ticket once the design is finalized","source":"Feroz"},{"code":"B1","jira":"TD-53","name":"Export shows [object Object] - fix ALL exports system-wide","type":"Bug","group":"Current","priority":"P0","cluster":"Export/Nav","week":"W1","owner":"","est_md":1.75,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"B4","jira":"TD-54","name":"Page scrolls to top after save - How-to Central/Install (incl. F14)","type":"Bug","group":"Current","priority":"P0","cluster":"How-to","week":"W1","owner":"","est_md":1.25,"est_actual_md":null,"daily":{},"pct":0,"note":"Shares root cause with TD-155 (report tables); fix together","source":"Feroz"},{"code":"B3","jira":"TD-55","name":"Website - match Careers page font with Landing page","type":"Bug","group":"Current","priority":"P0","cluster":"Website","week":"W1","owner":"","est_md":0.25,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"S1","jira":"TD-59","name":"Staging: cannot create a Trade Type","type":"Bug","group":"Current","priority":"STG","cluster":"Staging","week":"W1","owner":"","est_md":0.75,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"S2","jira":"TD-60","name":"Staging: company creation in System Setup broken","type":"Bug","group":"Current","priority":"STG","cluster":"Staging","week":"W1","owner":"","est_md":1,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"S13","jira":"TD-59","name":"Trade types only showing siding","type":"Bug","group":"Current","priority":"STG","cluster":"Staging","week":"W1","owner":"","est_md":0.5,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"SB1","jira":"TD-44","name":"Onboarding copy batch 1 - S7/S8/S9/S10 (welcome, icon, quick sign-up, video script)","type":"Feature","group":"Current","priority":"STG","cluster":"Onboard-polish","week":"W1","owner":"","est_md":0.75,"est_actual_md":null,"daily":{},"pct":0,"note":"TD-44/147/161 overlap; BA dedupes before handoff","source":"Feroz"},{"code":"VER","jira":"","name":"Verify tickets already Done / in review (TD-33/41/95/149/186/187)","type":"Feature","group":"Current","priority":"P1","cluster":"Verify","week":"W1","owner":"","est_md":0.5,"est_actual_md":null,"daily":{},"pct":0,"note":"Verification only, no development","source":"Feroz"},{"code":"F3.2","jira":"TD-126","name":"Timezone - apply across all screens + test (TD-35 user-selected)","type":"Feature","group":"Refactor","priority":"P0","cluster":"Timezone","week":"W2","owner":"","est_md":4.5,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"F1.2","jira":null,"name":"PO nomenclature per trade/tenant + Centralized PO","type":"Feature","group":"Current","priority":"P0","cluster":"PO & Pay","week":"W2","owner":"","est_md":3.25,"est_actual_md":null,"daily":{},"pct":0,"note":"Sub-task to be created under TD-162; these two parts have no ticket yet","source":"Feroz"},{"code":"F2.2","jira":"TD-51","name":"Daily payments - worker & admin UI","type":"Feature","group":"Current","priority":"P0","cluster":"PO & Pay","week":"W2","owner":"","est_md":2.25,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"F17","jira":null,"name":"Add PO release date on material PO","type":"Feature","group":"Current","priority":"P2","cluster":"PO & Pay","week":"W2","owner":"","est_md":0.5,"est_actual_md":null,"daily":{},"pct":0,"note":"Ticket to be created; folds into the TD-162 design","source":"Feroz"},{"code":"B2","jira":"TD-66","name":"Deep links to individual tabs in a page","type":"Bug","group":"Current","priority":"P0","cluster":"Export/Nav","week":"W2","owner":"","est_md":2,"est_actual_md":null,"daily":{},"pct":0,"note":"Needs clarification with the client","source":"Feroz"},{"code":"F5","jira":"TD-137","name":"Tenant profile setup - create profile first, then add trades","type":"Feature","group":"Refactor","priority":"P1","cluster":"Permissions","week":"W2","owner":"","est_md":1.25,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"F13","jira":"TD-33","name":"Adding a tenant in a proper way (foundation TD-33/41 done)","type":"Feature","group":"Refactor","priority":"P1","cluster":"Permissions","week":"W2","owner":"","est_md":0.5,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"F8","jira":"TD-63","name":"Suppliers can add warehouses & drivers","type":"Feature","group":"Current","priority":"P1","cluster":"Supplier","week":"W2","owner":"","est_md":2.25,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"F9","jira":"TD-68","name":"Connect triggers to logs (view trigger settings)","type":"Feature","group":"Current","priority":"P1","cluster":"LD/Logs","week":"W2","owner":"","est_md":1.25,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"F11","jira":"TD-70","name":"Show FM details on admin LD","type":"Feature","group":"Current","priority":"P1","cluster":"LD/Logs","week":"W2","owner":"","est_md":0.5,"est_actual_md":null,"daily":{},"pct":0,"note":"Duplicate of TD-139; link as duplicate","source":"Feroz"},{"code":"SB2","jira":"TD-44","name":"Onboarding copy batch 2 - S14/S15/S19/S21/S23 (work-experience wording)","type":"Feature","group":"Current","priority":"STG","cluster":"Onboard-polish","week":"W2","owner":"","est_md":0.75,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"F7","jira":null,"name":"How-to Central - add 'Required' checkbox option","type":"Feature","group":"Current","priority":"P1","cluster":"How-to","week":"W3","owner":"","est_md":1,"est_actual_md":null,"daily":{},"pct":0,"note":"Ticket to be created","source":"Feroz"},{"code":"F12","jira":"TD-148","name":"Roles & Permissions redesign - Tenant→Permissions (incl. S4)","type":"Feature","group":"Refactor","priority":"P1","cluster":"Permissions","week":"W3","owner":"","est_md":4.5,"est_actual_md":null,"daily":{},"pct":0,"note":"S4 merges into F12; related to TD-77/96","source":"Feroz"},{"code":"F4","jira":"TD-61","name":"Deactivate instead of Delete + profile history (worker/employee/builder/supplier)","type":"Feature","group":"Refactor","priority":"P1","cluster":"Deactivate","week":"W3","owner":"","est_md":2.75,"est_actual_md":null,"daily":{},"pct":0,"note":"Needs clarification with the client","source":"Feroz"},{"code":"F10","jira":"TD-64","name":"Admin view of Supplier Dashboard + scorecard↔delivery checklist","type":"Feature","group":"Current","priority":"P1","cluster":"Supplier","week":"W3","owner":"","est_md":2.5,"est_actual_md":null,"daily":{},"pct":0,"note":"Duplicate of TD-138; link as duplicate","source":"Feroz"},{"code":"B7","jira":"TD-139","name":"Show FM details on supplier LD & admin LD","type":"Bug","group":"Current","priority":"P1","cluster":"LD/Logs","week":"W3","owner":"","est_md":0.5,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"B5","jira":"TD-154","name":"Supplier LD - blue highlight column missing","type":"Bug","group":"Current","priority":"P1","cluster":"LD/Logs","week":"W3","owner":"","est_md":0.5,"est_actual_md":null,"daily":{},"pct":0,"note":"TD-154 covers this only partially; needs a scoped child ticket","source":"Feroz"},{"code":"B6","jira":"TD-67","name":"Supplier LD - show 'in-review' on delivery pill","type":"Bug","group":"Current","priority":"P1","cluster":"LD/Logs","week":"W3","owner":"","est_md":0.5,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"SB3","jira":"TD-147","name":"Onboarding media batch - S5 ethnic visuals / S6 blurry videos / S11 speed 1.15x","type":"Bug","group":"Current","priority":"STG","cluster":"Onboard-polish","week":"W3","owner":"","est_md":1.25,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"S20.1","jira":"TD-144","name":"Move email/phone verification to onboarding step 1","type":"Feature","group":"Current","priority":"STG","cluster":"Onboard-flow","week":"W3","owner":"","est_md":1.75,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"B8","jira":"TD-57","name":"Image recognition - OCR name matching + W-9 analysis","type":"Bug","group":"Current","priority":"P1","cluster":"OCR","week":"W3","owner":"","est_md":3,"est_actual_md":null,"daily":{},"pct":0,"note":"Related to TD-146/133; W-9 scope to be confirmed with the client","source":"Feroz"},{"code":"F6","jira":"TD-141","name":"Cut guy / crew lead - show Est QI & Job Ready Inspection dates","type":"Feature","group":"Current","priority":"P1","cluster":"WorkerApp","week":"W3","owner":"","est_md":0.75,"est_actual_md":null,"daily":{},"pct":0,"note":"Duplicate of TD-72; conflicts with TD-158 (restrict Cut Guy), confirm with client first","source":"Feroz"},{"code":"F18","jira":"TD-202","name":"Pin house number in header ({CommunityCode}-{HouseNumber})","type":"Feature","group":"Current","priority":"P2","cluster":"WorkerApp","week":"W3","owner":"","est_md":0.5,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"F15","jira":"TD-65","name":"2FA on password / banking info change","type":"Feature","group":"Refactor","priority":"P1","cluster":"2FA","week":"W4","owner":"","est_md":2.25,"est_actual_md":null,"daily":{},"pct":0,"note":"Related to TD-186/187/193 (OTP work in review)","source":"Feroz"},{"code":"S20.2","jira":"TD-144","name":"Save & resume onboarding progress","type":"Feature","group":"Current","priority":"STG","cluster":"Onboard-flow","week":"W4","owner":"","est_md":1.75,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"S12","jira":"TD-146","name":"ID matching confuses first / last names","type":"Bug","group":"Current","priority":"STG","cluster":"OCR","week":"W4","owner":"","est_md":1.25,"est_actual_md":null,"daily":{},"pct":0,"note":"Duplicate of TD-57; link as duplicate","source":"Feroz"},{"code":"F16","jira":"TD-62","name":"Central document database - supplier & worker docs (insurance, W-9…)","type":"Feature","group":"Current","priority":"P1","cluster":"Docs DB","week":"W4","owner":"","est_md":3.25,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"},{"code":"S3","jira":null,"name":"Settings page redesign (page is unclear)","type":"Feature","group":"Current","priority":"STG","cluster":"Settings","week":"W4","owner":"","est_md":1.75,"est_actual_md":null,"daily":{},"pct":0,"note":"Ticket to be created; needs clarification with the client","source":"Feroz"},{"code":"SB4","jira":"TD-145","name":"Onboarding fields batch - S16/S17 dates/'Present'/optional / S22 3 references / S24 remove required image","type":"Feature","group":"Current","priority":"STG","cluster":"Onboard-polish","week":"W4","owner":"","est_md":0.75,"est_actual_md":null,"daily":{},"pct":0,"note":"","source":"Feroz"}],"people":[{"name":"Anh Thái (Thai Tran Van)","role":"Senior developer, Refactor lead","level":"Senior","group":"Refactor","md_week":5,"note":""},{"name":"Anh Hậu","role":"Senior developer, Current lead","level":"Senior","group":"Current","md_week":5,"note":"Also covers US-hours night support"},{"name":"Anh Hoàng","role":"Team lead, reviews and support","level":"Senior","group":"Shared","md_week":2,"note":"Not counted at full capacity (reviews, coordination, night support)"},{"name":"Hoàng Anh","role":"Business analyst: analysis, test cases, planning","level":"Junior","group":"Shared","md_week":5,"note":"Not counted in dev capacity (non-coding)"},{"name":"Lương","role":"Developer","level":"Junior","group":"Current","md_week":5,"note":"Junior, AI-assisted"},{"name":"Hiếu","role":"Developer","level":"Junior","group":"Current","md_week":5,"note":"Junior, AI-assisted"},{"name":"Trang","role":"Developer","level":"Junior","group":"Refactor","md_week":5,"note":"Junior, AI-assisted; also maintains this plan"},{"name":"Nguyên","role":"Tester","level":"Junior","group":"Shared","md_week":5,"note":"Flow testing and API parity checks; not in dev capacity"},{"name":"Tester (remote)","role":"Remote tester","level":"Junior","group":"Shared","md_week":5,"note":"Needs detailed task briefs; not in dev capacity"},{"name":"VA-Senior-1","role":"Developer (Viet Anh squad)","level":"Senior","group":"Refactor","md_week":5,"note":"W1 counted as 3 md (mid-week onboarding)"},{"name":"VA-Senior-2","role":"Developer (Viet Anh squad)","level":"Senior","group":"Current","md_week":5,"note":"W1 counted as 3 md"},{"name":"VA-Junior-1","role":"Developer (Viet Anh squad)","level":"Junior","group":"Refactor","md_week":5,"note":"W1 counted as 3 md; junior, AI-assisted"},{"name":"VA-Junior-2","role":"Developer (Viet Anh squad)","level":"Junior","group":"Current","md_week":5,"note":"W1 counted as 3 md; junior, AI-assisted"},{"name":"VA-Junior-3","role":"Developer (Viet Anh squad)","level":"Junior","group":"Current","md_week":5,"note":"W1 counted as 3 md; junior, AI-assisted"}]};
+const LS_KEY = "tw-board-v4";
+
+/* ---------- state (fully editable: months, members, tasks) ---------- */
+let state = {
+  updated: DATA.updated,
+  months: structuredClone(DATA.months),
+  members: structuredClone(DATA.people),
+  tasks: DATA.tasks.map(t => ({
+    code:t.code, jira:t.jira||null, name:t.name, type:t.type, team:t.group,
+    priority:t.priority, tag:t.cluster||"", month:"T7", week:t.week,
+    owners:(t.owner?[t.owner]:[]), est_ai_md:+t.est_md||0,
+    est_actual_md:t.est_actual_md??null, progress:+t.pct||0, note:t.note||"", source:t.source||""
+  })),
+};
+DATA.tasks.forEach((t,i)=>{ state.tasks[i].month = t.month || state.months.find(m=>m.tasksMonth)?.id || "T7"; });
+(function loadLocal(){
+  try{
+    const s=JSON.parse(localStorage.getItem(LS_KEY)||"null");
+    if(s && s.base===DATA.updated){ state=s.state; }
+  }catch(e){}
+})();
+function saveLocal(){
+  localStorage.setItem(LS_KEY,JSON.stringify({base:DATA.updated,state}));
+}
+let activeMonth = state.months.find(m=>state.tasks.some(t=>t.month===m.id))?.id || state.months[0].id;
+const M = ()=>state.months.find(m=>m.id===activeMonth);
+const weeksOf = mid=>(state.months.find(m=>m.id===mid)||{weeks:[]}).weeks;
+const mtasks = ()=>state.tasks.filter(t=>t.month===activeMonth);
+
+/* ---------- calc ---------- */
+const eff=t=>(t.est_actual_md!=null&&t.est_actual_md!=="")?+t.est_actual_md:(+t.est_ai_md||0);
+const prog=t=>Math.max(0,Math.min(100,+t.progress||0));
+function wavg(list){let n=0,d=0;for(const t of list){n+=eff(t)*prog(t);d+=eff(t);}return d?n/d:null;}
+const fmtPct=v=>v==null?"-":Math.round(v)+"%";
+const TODAY=new Date(); TODAY.setHours(0,0,0,0);
+function weekDates(t){const w=weeksOf(t.month).find(x=>x.id===t.week); return w?{s:new Date(w.start),e:new Date(w.end)}:null;}
+function statusOf(t){
+  const p=prog(t); if(p>=100) return "done";
+  const d=weekDates(t);
+  if(d && d.e<TODAY) return "late";
+  if(d && TODAY>=d.s && TODAY<=d.e && p===0 && (TODAY-d.s)/864e5>=3) return "risk";
+  return p>0?"doing":"todo";
+}
+const ownersTxt=t=>t.owners.length?t.owners.join(", "):"";
+
+/* ---------- sandbox-safe dialogs (Artifact iframe blocks prompt/confirm/alert) ---------- */
+const dlgUi=document.getElementById("dlgForm");
+const dlgMsg=document.getElementById("dlgMsg");   // separate dialog so alerts never overwrite an open form
+function uiAlert(msg){
+  dlgMsg.innerHTML=`<div class="m-head"><h3 style="margin:0">Notice</h3></div>
+   <div class="m-body"><div>${msg}</div>
+   <div style="display:flex;justify-content:flex-end"><button class="btn-primary" id="uOk">OK</button></div></div>`;
+  dlgMsg.showModal(); dlgMsg.querySelector("#uOk").onclick=()=>dlgMsg.close();
+}
+function uiConfirm(msg){
+  return new Promise(res=>{
+    dlgMsg.innerHTML=`<div class="m-head"><h3 style="margin:0">Confirm</h3></div>
+     <div class="m-body"><div>${msg}</div>
+     <div style="display:flex;gap:8px;justify-content:flex-end">
+       <button id="uNo">Cancel</button><button class="btn-primary" id="uYes">OK</button></div></div>`;
+    dlgMsg.showModal();
+    dlgMsg.querySelector("#uYes").onclick=()=>{dlgMsg.close();res(true);};
+    dlgMsg.querySelector("#uNo").onclick=()=>{dlgMsg.close();res(false);};
+  });
+}
+
+/* ---------- tabs & months ---------- */
+document.getElementById("tabs").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-tab]"); if(!b) return;
+  document.querySelectorAll("#tabs > button[data-tab]").forEach(x=>x.classList.toggle("on",x===b));
+  document.querySelectorAll(".tabpane").forEach(p=>p.classList.toggle("on",p.id==="pane-"+b.dataset.tab));
+});
+function renderMonthbar(){
+  const el=document.getElementById("monthbar");
+  el.innerHTML=state.months.map(m=>`<button data-m="${m.id}" class="${m.id===activeMonth?"on":""}">${m.id}</button>`).join("")
+    +`<button id="btnAddMonth" title="Add a month">＋</button>`;
+  el.querySelectorAll("button[data-m]").forEach(b=>b.onclick=()=>{activeMonth=b.dataset.m; renderAll();});
+  el.querySelector("#btnAddMonth").onclick=addMonthDialog;
+}
+function genWeeks(y,mo){ // Mon-Sun weeks intersecting the month
+  const first=new Date(Date.UTC(y,mo-1,1)), last=new Date(Date.UTC(y,mo,0));
+  let d=new Date(first); const dow=(d.getUTCDay()+6)%7; d.setUTCDate(d.getUTCDate()-dow);
+  const out=[]; let i=1;
+  const MMM=first.toLocaleString("en",{month:"short",timeZone:"UTC"});
+  while(d<=last){
+    const s=new Date(Math.max(d,first)); const e0=new Date(d); e0.setUTCDate(e0.getUTCDate()+6);
+    const e=new Date(Math.min(e0,last));
+    out.push({id:"W"+i,range:`${MMM} ${String(s.getUTCDate()).padStart(2,"0")}-${String(e.getUTCDate()).padStart(2,"0")}`,
+      start:s.toISOString().slice(0,10),end:e.toISOString().slice(0,10)});
+    i++; d.setUTCDate(d.getUTCDate()+7);
+  }
+  return out;
+}
+function addMonthDialog(){
+  dlgUi.innerHTML=`<div class="m-head"><div><span class="code">NEW MONTH</span><h3>Add a month</h3></div>
+    <button class="m-close" id="amClose" aria-label="Close">✕</button></div>
+   <form class="f" id="amForm">
+     <div><label>Month (YYYY-MM)</label><input name="ym" placeholder="2026-08" required pattern="\\d{4}-\\d{1,2}"></div>
+     <div><label>Capacity / week (md)</label><input name="cap" inputmode="decimal" value="50"></div>
+     <div class="actions"><button type="button" id="amCancel">Cancel</button>
+       <button class="btn-primary" type="submit">Add month</button></div>
+   </form>`;
+  dlgUi.showModal();
+  dlgUi.querySelector("#amClose").onclick=dlgUi.querySelector("#amCancel").onclick=()=>dlgUi.close();
+  dlgUi.querySelector("#amForm").onsubmit=e=>{
+    e.preventDefault();
+    const f=Object.fromEntries(new FormData(e.target).entries());
+    const m=f.ym.trim().match(/^(\d{4})-(\d{1,2})$/);
+    if(!m){uiAlert("Invalid format. Use YYYY-MM, e.g. 2026-08.");return;}
+    const y=+m[1],mo=+m[2], id="T"+mo;
+    if(state.months.some(x=>x.id===id)){uiAlert("Month "+id+" already exists.");return;}
+    const weeks=genWeeks(y,mo); weeks.forEach(w=>w.daily={});
+    const cap={}; weeks.forEach(w=>cap[w.id]=Math.max(1,parseFloat(f.cap)||50));
+    const name=new Date(Date.UTC(y,mo-1,1)).toLocaleString("en",{month:"long",timeZone:"UTC"}).toUpperCase();
+    state.months.push({id,label:`${name} ${y}`,weeks,capacity:cap,tasksMonth:true});
+    activeMonth=id; saveLocal(); dlgUi.close(); renderAll();
+  };
+}
+
+/* ---------- tiles (client view: progress · done · active · at-risk) ---------- */
+function donut(p){const r=26,c=2*Math.PI*r,f=c*Math.min(p,100)/100;
+  return `<svg width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="${Math.round(p)}%">
+   <circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--track)" stroke-width="8"/>
+   <circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--ref)" stroke-width="8"
+     stroke-dasharray="${f} ${c-f}" stroke-linecap="round" transform="rotate(-90 32 32)"/></svg>`;}
+function renderTiles(){
+  const ts=mtasks(), all=wavg(ts)??0;
+  const done=ts.filter(t=>statusOf(t)==="done"), doing=ts.filter(t=>statusOf(t)==="doing"),
+        lateN=ts.filter(t=>statusOf(t)==="late").length, riskN=ts.filter(t=>statusOf(t)==="risk").length;
+  const activePeople=[...new Set(doing.flatMap(t=>t.owners))];
+  const load=ts.reduce((s,t)=>s+eff(t),0), doneMd=done.reduce((s,t)=>s+eff(t),0);
+  document.getElementById("tiles").innerHTML=`
+   <div class="tile"><div>${donut(all)}</div><div><div class="lbl">Month progress</div><div class="big num">${fmtPct(all)}</div><div class="sm num">${doneMd.toFixed(1)} of ${load.toFixed(1)} md delivered</div></div></div>
+   <div class="tile"><div><div class="lbl">Tasks done</div><div class="big num">${done.length}<span style="font-size:15px;color:var(--ink-3)"> / ${ts.length}</span></div><div class="sm num">${doing.length} in progress now</div></div></div>
+   <div class="tile"><div><div class="lbl">Working right now</div><div class="big num">${activePeople.length||"-"}</div><div class="sm">${activePeople.slice(0,4).join(", ")||"no active owners yet"}${activePeople.length>4?"…":""}</div></div></div>
+   <div class="tile"><div><div class="lbl">Needs attention</div><div class="big num" style="${lateN?"color:var(--late)":""}">${lateN+riskN||"0"}</div><div class="sm">${lateN} late, ${riskN} at risk</div></div></div>`;
+}
+
+/* ---------- quick filters (Jira-style: assignee, priority, type, attention) ---------- */
+const qfState={owners:new Set(),pris:new Set(),types:new Set(),attention:false};
+const initials=n=>n.replace(/[()].*/g,"").trim().split(/\s+/).map(x=>x[0]).slice(-2).join("").toUpperCase();
+function taskVisible(t){
+  if(qfState.owners.size){
+    const hit=t.owners.some(o=>qfState.owners.has(o))||(qfState.owners.has("__un")&&!t.owners.length);
+    if(!hit)return false;
+  }
+  if(qfState.pris.size&&!qfState.pris.has(t.priority))return false;
+  if(qfState.types.size&&!qfState.types.has(t.type))return false;
+  if(qfState.attention&&!["late","risk"].includes(statusOf(t)))return false;
+  return true;
+}
+function renderQF(){
+  const owners=[...new Set(mtasks().flatMap(t=>t.owners))];
+  const el=document.getElementById("qf");
+  el.innerHTML=`<span class="lbl">Filter</span>`
+   +owners.map(o=>`<button class="av ${qfState.owners.has(o)?"on":""}" data-own="${o}" title="${o}">${initials(o)}</button>`).join("")
+   +`<button class="fchip ${qfState.owners.has("__un")?"on":""}" data-own="__un">Unassigned</button>`
+   +["P0","P1","P2","STG"].map(x=>`<button class="fchip ${qfState.pris.has(x)?"on":""}" data-pri="${x}">${x}</button>`).join("")
+   +["Feature","Bug"].map(x=>`<button class="fchip ${qfState.types.has(x)?"on":""}" data-type="${x}">${x}</button>`).join("")
+   +`<button class="fchip ${qfState.attention?"on":""}" data-att="1">⚠ Needs attention</button>`
+   +((qfState.owners.size||qfState.pris.size||qfState.types.size||qfState.attention)?`<button class="fchip" data-clear="1">✕ Clear</button>`:"");
+  el.onclick=e=>{
+    const b=e.target.closest("button"); if(!b)return;
+    const tg=(set,v)=>set.has(v)?set.delete(v):set.add(v);
+    if(b.dataset.clear){qfState.owners.clear();qfState.pris.clear();qfState.types.clear();qfState.attention=false;}
+    else if(b.dataset.own)tg(qfState.owners,b.dataset.own);
+    else if(b.dataset.pri)tg(qfState.pris,b.dataset.pri);
+    else if(b.dataset.type)tg(qfState.types,b.dataset.type);
+    else if(b.dataset.att)qfState.attention=!qfState.attention;
+    renderQF(); renderBoard();
+  };
+}
+function weekDayLabels(w){
+  const out=[]; if(!w.start)return out;
+  let d=new Date(w.start+"T00:00:00Z"); const e=new Date(w.end+"T00:00:00Z");
+  while(d<=e){out.push({iso:d.toISOString().slice(0,10),
+    lb:d.toLocaleString("en",{weekday:"narrow",timeZone:"UTC"})+d.getUTCDate()});
+    d=new Date(d.getTime()+864e5);}
+  return out;
+}
+
+/* ---------- board (kanban matrix, drag & drop) ---------- */
+function chipHTML(t){
+  const p=prog(t), st=statusOf(t);
+  const cls=st==="risk"?"doing":st;
+  const dot=p>=100?`<span class="st full"></span>`:p>0?`<span class="st part" style="--p:${p}"></span>`:`<span class="st zero"></span>`;
+  const flag=st==="late"?`<span class="flag late">LATE</span>`:st==="risk"?`<span class="flag risk">AT RISK</span>`:"";
+  return `<button class="chip ${cls}" draggable="true" data-code="${t.code}">${dot}<span class="tx">
+    <span class="code num">${t.code}${flag}</span>
+    <span class="name">${t.name}</span>
+    <span class="meta"><span class="pri ${t.priority==="P3"?"P2":t.priority}">${t.priority}</span>
+      <span class="md num">${eff(t)} md</span>
+      ${t.owners.length?`<span class="who" style="margin:0">👤 ${ownersTxt(t)}</span>`:`<span class="who" style="margin:0;color:#b7bfca">unassigned</span>`}</span>
+    </span><span class="pct num">${Math.round(p)}%</span></button>`;
+}
+function renderBoard(){
+  const wks=M().weeks, allT=mtasks(), ts=allT.filter(taskVisible);
+  const cells=(w,team,type)=>{
+    const xs=ts.filter(t=>t.week===w&&t.team===team&&t.type===type);
+    const body=xs.length?xs.map(chipHTML).join(""):`<span class="mono-dash">-</span>`;
+    const done=xs.filter(t=>prog(t)>=100).length;
+    const sum=xs.length?`<div class="cellsum num">${done}/${xs.length} done, ${fmtPct(wavg(xs))}, ${xs.reduce((s,t)=>s+eff(t),0).toFixed(1)} md</div>`:"";
+    return `<td class="cell ${type==="Feature"?"ty-f":"ty-b"}" data-week="${w}" data-team="${team}" data-type="${type}">${body}${sum}</td>`;
+  };
+  let h=`<thead><tr><th rowspan="2" class="lbl" style="font-size:11px">Week</th>
+    <th colspan="2" class="grp ref">REFACTOR · Mr. Thai</th>
+    <th colspan="2" class="grp cur">CURRENT · Mr. Hau</th>
+    <th rowspan="2" class="lbl" style="font-size:11px">Weekly<br>%</th></tr>
+    <tr><th class="ty-f">Features</th><th class="ty-b">Bugs</th><th class="ty-f">Features</th><th class="ty-b">Bugs</th></tr></thead><tbody>`;
+  for(const w of wks){
+    const wt=ts.filter(t=>t.week===w.id);
+    const done=wt.filter(t=>prog(t)>=100).length;
+    const days=weekDayLabels(w); w.daily=w.daily||{};
+    const track=days.length?`<div class="wk-daily"><span class="cap">DAILY % OF WEEK</span>
+       <div class="bars">${days.map(d=>`<i style="height:${Math.round((+w.daily[d.iso]||0)/100*16)||1}px" title="${d.iso}: ${w.daily[d.iso]??"-"}%"></i>`).join("")}</div>
+       <div class="cells">${days.map(d=>`<input inputmode="numeric" data-wk="${w.id}" data-d="${d.iso}" value="${w.daily[d.iso]??""}" placeholder="${d.lb}" title="${d.iso}">`).join("")}</div></div>`:"";
+    h+=`<tr><td class="wk">${w.id}<span class="dates">${w.range}</span>
+        <span class="wpct num">${fmtPct(wavg(wt))}</span><span class="wdone num">${done}/${wt.length} tasks done</span>${track}</td>
+      ${cells(w.id,"Refactor","Feature")}${cells(w.id,"Refactor","Bug")}
+      ${cells(w.id,"Current","Feature")}${cells(w.id,"Current","Bug")}
+      <td class="num" style="font-size:18px;font-weight:750">${fmtPct(wavg(wt))}</td></tr>`;
+  }
+  const F=(team,type)=>fmtPct(wavg(ts.filter(t=>t.team===team&&t.type===type)));
+  h+=`</tbody><tfoot><tr><td>MONTH %</td><td class="num">${F("Refactor","Feature")}</td><td class="num">${F("Refactor","Bug")}</td>
+    <td class="num">${F("Current","Feature")}</td><td class="num">${F("Current","Bug")}</td>
+    <td class="num" style="font-size:18px;color:var(--ref)">${fmtPct(wavg(ts))}</td></tr></tfoot>`;
+  const el=document.getElementById("mtx"); el.innerHTML=h;
+  el.querySelectorAll(".chip").forEach(c=>{
+    c.onclick=()=>openTask(c.dataset.code);
+    c.addEventListener("dragstart",e=>{e.dataTransfer.setData("text/plain",c.dataset.code);
+      e.dataTransfer.effectAllowed="move"; c.classList.add("dragging");});
+    c.addEventListener("dragend",()=>c.classList.remove("dragging"));
+  });
+  el.querySelectorAll(".wk-daily input").forEach(inp=>{
+    inp.onchange=()=>{
+      const w=M().weeks.find(x=>x.id===inp.dataset.wk); if(!w)return;
+      const v=inp.value.trim(); w.daily=w.daily||{};
+      if(v==="")delete w.daily[inp.dataset.d];
+      else{const n=Math.max(0,Math.min(100,parseFloat(v)||0)); w.daily[inp.dataset.d]=n; inp.value=n;}
+      saveLocal(); scheduleRender();
+    };
+  });
+  el.querySelectorAll("td.cell").forEach(td=>{
+    td.addEventListener("dragover",e=>{e.preventDefault(); td.classList.add("dragover");});
+    td.addEventListener("dragleave",()=>td.classList.remove("dragover"));
+    td.addEventListener("drop",e=>{
+      e.preventDefault(); td.classList.remove("dragover");
+      const code=e.dataTransfer.getData("text/plain");
+      const t=state.tasks.find(x=>x.code===code); if(!t) return;
+      t.week=td.dataset.week; t.team=td.dataset.team; t.type=td.dataset.type;
+      saveLocal(); scheduleRender();
+    });
+  });
+}
+
+/* ---------- charts ---------- */
+function renderWeekly(){
+  const wks=M().weeks, ts=mtasks();
+  const W=460,H=210,pl=34,pb=26,pt=14,bw=Math.min(18,120/wks.length),gap=2,groupW=(W-pl-10)/wks.length;
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Weekly progress">`;
+  for(const g of [0,50,100]){const y=pt+(H-pt-pb)*(1-g/100);
+    s+=`<line x1="${pl}" x2="${W-6}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${pl-6}" y="${y+4}" text-anchor="end" class="num">${g}</text>`;}
+  wks.forEach((w,i)=>{
+    const x0=pl+i*groupW+groupW/2;
+    [["Refactor","var(--ref)"],["Current","var(--cur)"]].forEach(([team,col],k)=>{
+      const v=wavg(ts.filter(t=>t.week===w.id&&t.team===team));
+      const hgt=v==null?0:(H-pt-pb)*v/100, x=x0-(bw+gap)+k*(bw+gap), y=H-pb-hgt;
+      s+=`<rect x="${x}" y="${y}" width="${bw}" height="${Math.max(hgt,0)}" fill="${col}" rx="4"/>`;
+      if(v!=null&&v>0)s+=`<text x="${x+bw/2}" y="${y-4}" text-anchor="middle" class="val num">${Math.round(v)}%</text>`;
+    });
+    s+=`<text x="${x0}" y="${H-8}" text-anchor="middle">${w.id}</text>`;
+  });
+  document.getElementById("chWeekly").innerHTML=s+"</svg>";
+}
+function renderLoad(){
+  const wks=M().weeks, ts=mtasks(), cap=M().capacity||{};
+  const rows=wks.map(w=>({w,
+    r:ts.filter(t=>t.week===w.id&&t.team==="Refactor").reduce((s,t)=>s+eff(t),0),
+    c:ts.filter(t=>t.week===w.id&&t.team==="Current").reduce((s,t)=>s+eff(t),0),
+    cap:cap[w.id]||0}));
+  const max=Math.max(1,...rows.map(x=>Math.max(x.r+x.c,x.cap)))*1.12;
+  const W=460,rowH=38,pl=42,pr=72,H=rows.length*rowH+14;
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Load vs capacity">`;
+  rows.forEach((x,i)=>{const y=10+i*rowH,bh=14,sc=v=>(W-pl-pr)*v/max;
+    s+=`<text x="${pl-8}" y="${y+bh-2}" text-anchor="end">${x.w.id}</text>
+     <rect x="${pl}" y="${y}" width="${W-pl-pr}" height="${bh}" fill="var(--track)" rx="4"/>
+     <rect x="${pl}" y="${y}" width="${sc(x.r)}" height="${bh}" fill="var(--ref)" rx="4"/>
+     <rect x="${pl+sc(x.r)+2}" y="${y}" width="${Math.max(sc(x.c)-2,0)}" height="${bh}" fill="var(--cur)" rx="4"/>
+     <line x1="${pl+sc(x.cap)}" x2="${pl+sc(x.cap)}" y1="${y-4}" y2="${y+bh+4}" stroke="var(--ink)" stroke-width="2"/>
+     <text x="${W-4}" y="${y+bh-2}" text-anchor="end" class="val num">${(x.r+x.c).toFixed(1)} / ${x.cap}</text>`;});
+  document.getElementById("chLoad").innerHTML=s+"</svg>";
+}
+
+/* ---------- progress by priority (client cares about P0) ---------- */
+function renderPri(){
+  const ts=mtasks(), rows=["P0","P1","P2","STG"].map(pr=>{
+    const xs=ts.filter(t=>t.priority===pr);
+    return {pr,xs,v:wavg(xs),done:xs.filter(t=>prog(t)>=100).length};
+  }).filter(r=>r.xs.length);
+  const W=440,rowH=42,pl=44,pr0=52,H=rows.length*rowH+8;
+  let sv=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Progress by priority">`;
+  const COL={P0:"#d23f3e",P1:"#e8a33d",P2:"#e3c93f",STG:"#6f5fce"};
+  rows.forEach((r,i)=>{
+    const y=8+i*rowH,bh=16,v=r.v??0,sc=(W-pl-pr0);
+    sv+=`<text x="${pl-8}" y="${y+bh-3}" text-anchor="end" class="val">${r.pr}</text>
+      <rect x="${pl}" y="${y}" width="${sc}" height="${bh}" fill="var(--track)" rx="5"/>
+      <rect x="${pl}" y="${y}" width="${Math.max(sc*v/100,0)}" height="${bh}" fill="${COL[r.pr]}" rx="5"/>
+      <text x="${W-4}" y="${y+bh-3}" text-anchor="end" class="val num">${fmtPct(r.v)}</text>
+      <text x="${pl+4}" y="${y+bh+13}" class="num" font-size="10">${r.done}/${r.xs.length} done · ${r.xs.reduce((s,t)=>s+eff(t),0).toFixed(1)} md</text>`;
+  });
+  document.getElementById("chPri").innerHTML=sv+"</svg>";
+}
+
+/* ---------- timeline (Jira-style, grouped by work stream) ---------- */
+function renderTimeline(){
+  document.getElementById("tlMonth").textContent=M().label;
+  const wks=M().weeks, ts=mtasks();
+  const tags=[...new Set(ts.map(t=>t.tag))].sort();
+  let h=`<thead><tr><th style="min-width:230px">Work stream / task</th><th class="c">Owner</th><th class="c">md</th>`
+    +wks.map(w=>`<th class="c" style="min-width:110px">${w.id}<br><span class="sub">${w.range}</span></th>`).join("")+`</tr></thead><tbody>`;
+  const COLST={done:"var(--done)",doing:"var(--doing)",late:"var(--late)",risk:"var(--risk)",todo:"#b9c2cf"};
+  for(const tag of tags){
+    const xs=ts.filter(t=>t.tag===tag);
+    h+=`<tr class="tagband"><td colspan="3">${tag}: ${fmtPct(wavg(xs))}, ${xs.reduce((s,t)=>s+eff(t),0).toFixed(1)} md</td>`
+      +wks.map(w=>{const ws=xs.filter(t=>t.week===w.id);
+        return `<td class="c num">${ws.length?fmtPct(wavg(ws)):""}</td>`;}).join("")+`</tr>`;
+    for(const t of xs){
+      const st=statusOf(t), p=prog(t);
+      h+=`<tr><td><button class="codebtn num" data-code="${t.code}">${t.code}</button> <span class="sub">${t.name.slice(0,46)}${t.name.length>46?"…":""}</span></td>
+        <td class="c sub">${t.owners.map(initials).join(", ")||"-"}</td>
+        <td class="c num">${eff(t)}</td>`
+        +wks.map(w=>w.id===t.week
+          ?`<td><div class="tl-bar"><i style="width:${p}%;background:${COLST[st]};opacity:.8"></i><span class="num">${Math.round(p)}%</span></div></td>`
+          :`<td></td>`).join("")+`</tr>`;
+    }
+  }
+  const el=document.getElementById("tlTable"); el.innerHTML=h+"</tbody>";
+  el.querySelectorAll(".codebtn").forEach(b=>b.onclick=()=>openTask(b.dataset.code));
+}
+
+/* ---------- backlog ---------- */
+let sortKey="code",sortDir=1;
+const cols=[["code","Code",t=>t.code],["jira","Jira",t=>t.jira||""],["name","Task",t=>t.name],
+  ["team","Team",t=>t.team],["type","Type",t=>t.type],["priority","Pri",t=>t.priority],
+  ["tag","Tag",t=>t.tag],["week","Week",t=>t.week],["owners","Owners",t=>ownersTxt(t)],
+  ["est_ai_md","Est AI",t=>+t.est_ai_md||0],["est_actual_md","Actual",t=>t.est_actual_md??""],
+  ["progress","%",t=>prog(t)],["status","Status",t=>statusOf(t)]];
+function filtered(){
+  const q=document.getElementById("q").value.trim().toLowerCase();
+  const f=id=>document.getElementById(id).value;
+  return mtasks().filter(t=>
+    (!q||(t.code+" "+t.name+" "+(t.jira||"")+" "+ownersTxt(t)).toLowerCase().includes(q))&&
+    (!f("fWeek")||t.week===f("fWeek"))&&(!f("fTeam")||t.team===f("fTeam"))&&
+    (!f("fType")||t.type===f("fType"))&&(!f("fPri")||t.priority===f("fPri"))&&
+    (!f("fStat")||statusOf(t)===f("fStat")||(f("fStat")==="doing"&&statusOf(t)==="risk")));
+}
+function renderBacklog(){
+  document.getElementById("blMonth").textContent=activeMonth;
+  const fw=document.getElementById("fWeek");
+  const cur=fw.value; fw.innerHTML=`<option value="">Week: all</option>`+M().weeks.map(w=>`<option>${w.id}</option>`).join("");
+  fw.value=cur;
+  const list=filtered().slice().sort((a,b)=>{
+    const col=cols.find(c=>c[0]===sortKey),va=col[2](a),vb=col[2](b);
+    const na=parseFloat(va),nb=parseFloat(vb);
+    if(!isNaN(na)&&!isNaN(nb)&&String(va).trim()!==""&&String(vb).trim()!=="")return(na-nb)*sortDir;
+    return String(va).localeCompare(String(vb),undefined,{numeric:true})*sortDir;});
+  document.getElementById("countLine").textContent=`${list.length} / ${mtasks().length} tasks`;
+  let h="<thead><tr>"+cols.map(c=>`<th class="sortable ${sortKey===c[0]?(sortDir>0?"sorted-asc":"sorted-desc"):""}" tabindex="0" data-k="${c[0]}">${c[1]}</th>`).join("")+"<th class=c>Month</th></tr></thead><tbody>";
+  for(const t of list){
+    const p=prog(t),st=statusOf(t);
+    h+=`<tr class="${t.source==="ADDED-web"?"newrow":""}">
+     <td><button class="codebtn num" data-code="${t.code}">${t.code}</button></td>
+     <td>${t.jira?`<a href="https://tradewize.atlassian.net/browse/${t.jira}" target="_blank" rel="noopener">${t.jira}</a>`:"-"}</td>
+     <td style="min-width:250px">${t.name}</td>
+     <td class="c"><span class="tag ${t.team==="Refactor"?"ref":"cur"}">${t.team}</span></td>
+     <td class="c"><span class="tag ${t.type==="Bug"?"bug":"feature"}">${t.type}</span></td>
+     <td class="c"><span class="tag ${({P0:"p0",P1:"p1",P2:"p2"})[t.priority]||"stg"}">${t.priority}</span></td>
+     <td class="c"><span class="tag plain">${t.tag}</span></td>
+     <td class="c"><select data-code="${t.code}" data-f="week">${M().weeks.map(w=>`<option ${w.id===t.week?"selected":""}>${w.id}</option>`).join("")}</select></td>
+     <td><div class="owners-cell" data-code="${t.code}">${t.owners.map(o=>`<span class="owner-pill">${o}<button data-rm="${o}" aria-label="remove ${o}">✕</button></span>`).join("")}
+        <button class="addown" data-add="1">+</button></div></td>
+     <td class="r num">${t.est_ai_md}</td>
+     <td class="c"><input class="est num" inputmode="decimal" data-code="${t.code}" data-f="est_actual_md" value="${t.est_actual_md??""}" placeholder="${t.est_ai_md}"></td>
+     <td class="c"><input class="prog num" inputmode="numeric" data-code="${t.code}" data-f="progress" value="${p}"></td>
+     <td class="c"><span class="tag status-${st==="risk"?"doing":st}">${st==="risk"?"at risk":st==="doing"?"in progress":st==="todo"?"not started":st}</span></td>
+     <td class="c"><select data-code="${t.code}" data-f="month">${state.months.map(m=>`<option ${m.id===t.month?"selected":""}>${m.id}</option>`).join("")}</select></td></tr>`;
+  }
+  const el=document.getElementById("blTable"); el.innerHTML=h+"</tbody>";
+  el.querySelectorAll("th.sortable").forEach(th=>th.onclick=()=>{const k=th.dataset.k;sortDir=(sortKey===k)?-sortDir:1;sortKey=k;renderBacklog();});
+  el.querySelectorAll(".codebtn").forEach(b=>b.onclick=()=>openTask(b.dataset.code));
+  el.querySelectorAll("select[data-f],input[data-f]").forEach(inp=>{
+    inp.onchange=()=>{
+      const t=state.tasks.find(x=>x.code===inp.dataset.code); if(!t)return;
+      const v=inp.value.trim();
+      if(inp.dataset.f==="est_actual_md"){t.est_actual_md=v===""?null:Math.max(0.25,parseFloat(v)||0);}
+      else if(inp.dataset.f==="progress"){t.progress=Math.max(0,Math.min(100,parseFloat(v)||0));}
+      else if(inp.dataset.f==="week"){t.week=v;}
+      else if(inp.dataset.f==="month"){t.month=v; if(!weeksOf(v).some(w=>w.id===t.week))t.week=weeksOf(v)[0]?.id||"W1";}
+      saveLocal(); scheduleRender();
+    };
+  });
+  el.querySelectorAll(".owners-cell").forEach(cell=>{
+    cell.addEventListener("click",e=>{
+      const t=state.tasks.find(x=>x.code===cell.dataset.code); if(!t)return;
+      if(e.target.dataset.rm){t.owners=t.owners.filter(o=>o!==e.target.dataset.rm); saveLocal(); scheduleRender();}
+      else if(e.target.dataset.add){openTask(t.code);}
+    });
+  });
+}
+["q","fWeek","fTeam","fType","fPri","fStat"].forEach(id=>document.getElementById(id).addEventListener("input",renderBacklog));
+
+/* ---------- team CRUD ---------- */
+function renderTeam(){
+  const per=state.members.map(p=>{
+    const mine=state.tasks.filter(t=>t.owners.includes(p.name));
+    const load=mine.reduce((s,t)=>s+eff(t)/Math.max(t.owners.length,1),0);
+    const doneMd=mine.filter(t=>prog(t)>=100).reduce((s,t)=>s+eff(t)/Math.max(t.owners.length,1),0);
+    const avail=(+p.md_week||0)*M().weeks.length;
+    return {p,mine,load,doneMd,avail,prog:wavg(mine)};
+  });
+  let h=`<thead><tr><th>Name</th><th>Role</th><th class="c">Level</th><th class="c">Team</th>
+    <th class="c">md/wk</th><th class="c">Tasks</th><th class="c">Load</th><th style="min-width:150px">vs available</th>
+    <th class="c">Delivered</th><th class="c">Progress</th><th>Notes</th><th class="c">Actions</th></tr></thead><tbody>`;
+  per.forEach(({p,mine,load,doneMd,avail,prog:pr},i)=>{
+    const ratio=avail?Math.min(load/avail*100,100):0, over=avail&&load>avail;
+    h+=`<tr><td style="font-weight:750">${p.name}</td><td class="sub">${p.role||""}</td>
+     <td class="c">${p.level||""}</td>
+     <td class="c">${p.group?`<span class="tag ${p.group==="Refactor"?"ref":p.group==="Current"?"cur":"plain"}">${p.group}</span>`:""}</td>
+     <td class="c num">${p.md_week||""}</td><td class="c num">${mine.length||"-"}</td>
+     <td class="c num" style="font-weight:750;${over?"color:var(--late)":""}">${load?load.toFixed(1)+" md":"-"}</td>
+     <td><div class="bar" role="img" aria-label="${load.toFixed(1)} of ${avail} man-days">
+       <i style="width:${ratio}%;background:${over?"var(--late)":"var(--ref)"}"></i></div>
+       <span class="sub num">${avail?load.toFixed(1)+" / "+avail+" md":""}</span></td>
+     <td class="c num">${doneMd?doneMd.toFixed(1)+" md":"-"}</td>
+     <td class="c num">${pr==null?"-":Math.round(pr)+"%"}</td>
+     <td class="sub">${p.note||""}</td>
+     <td class="c" style="white-space:nowrap"><button data-edit="${i}">Edit</button> <button data-del="${i}" class="btn-quiet danger">✕</button></td></tr>`;
+  });
+  const el=document.getElementById("teamTable"); el.innerHTML=h+"</tbody>";
+  el.querySelectorAll("button[data-edit]").forEach(b=>b.onclick=()=>memberForm(+b.dataset.edit));
+  el.querySelectorAll("button[data-del]").forEach(b=>b.onclick=()=>{
+    const p=state.members[+b.dataset.del];
+    const owned=state.tasks.filter(t=>t.owners.includes(p.name)).length;
+    uiConfirm(`Remove <b>${p.name}</b>?`+(owned?` They own ${owned} task(s), which will become unassigned.`:"")).then(ok=>{
+      if(!ok) return;
+      state.tasks.forEach(t=>t.owners=t.owners.filter(o=>o!==p.name));
+      state.members.splice(+b.dataset.del,1);
+      saveLocal(); scheduleRender();
+    });
+  });
+}
+const dlgForm=document.getElementById("dlgForm");
+function memberForm(idx){
+  const p=idx!=null?state.members[idx]:{name:"",role:"",level:"Junior",group:"Current",md_week:5,note:""};
+  dlgForm.innerHTML=`
+   <div class="m-head"><div><span class="code">${idx!=null?"EDIT MEMBER":"NEW MEMBER"}</span><h3>${idx!=null?p.name:"Add a team member"}</h3></div>
+     <button class="m-close" id="fClose" aria-label="Close">✕</button></div>
+   <form class="f" id="mf">
+     <div><label>Name</label><input name="name" value="${p.name}" required></div>
+     <div><label>Role</label><input name="role" value="${p.role||""}"></div>
+     <div><label>Level</label><select name="level">${["Senior","Junior"].map(x=>`<option ${x===p.level?"selected":""}>${x}</option>`).join("")}</select></div>
+     <div><label>Team</label><select name="group">${["Refactor","Current","Chung"].map(x=>`<option ${x===p.group?"selected":""}>${x}</option>`).join("")}</select></div>
+     <div><label>Man-day / week</label><input name="md_week" inputmode="decimal" value="${p.md_week??5}"></div>
+     <div class="full"><label>Notes</label><input name="note" value="${p.note||""}"></div>
+     <div class="actions"><button type="button" id="fCancel">Cancel</button><button class="btn-primary" type="submit">${idx!=null?"Save":"Add member"}</button></div>
+   </form>`;
+  dlgForm.showModal();
+  dlgForm.querySelector("#fClose").onclick=dlgForm.querySelector("#fCancel").onclick=()=>dlgForm.close();
+  dlgForm.querySelector("#mf").onsubmit=e=>{
+    e.preventDefault();
+    const f=Object.fromEntries(new FormData(e.target).entries());
+    const rec={name:f.name.trim(),role:f.role.trim(),level:f.level,group:f.group,
+      md_week:Math.max(0,parseFloat(f.md_week)||0),note:f.note.trim()};
+    if(!rec.name)return;
+    if(idx!=null){
+      const old=state.members[idx].name;
+      if(old!==rec.name) state.tasks.forEach(t=>t.owners=t.owners.map(o=>o===old?rec.name:o));
+      state.members[idx]=rec;
+    } else {
+      if(state.members.some(m=>m.name===rec.name)){uiAlert("That name already exists.");return;}
+      state.members.push(rec);
+    }
+    saveLocal(); scheduleRender(); dlgForm.close();
+  };
+}
+document.getElementById("btnAddMember").onclick=()=>memberForm(null);
+
+/* ---------- task modal ---------- */
+const dlg=document.getElementById("dlg");
+function openTask(code){
+  const t=state.tasks.find(x=>x.code===code); if(!t)return;
+  const st=statusOf(t);
+  dlg.innerHTML=`
+   <div class="m-head"><div>
+     <span class="code num">${t.code} · ${t.priority} <span class="tag plain">${t.tag}</span>
+       ${st==="late"?'<span class="flag late">LATE</span>':st==="risk"?'<span class="flag risk">AT RISK</span>':""}
+       ${t.source==="ADDED-web"?'<span class="tag cur">NEW</span>':""}</span>
+     <h3>${t.name}</h3></div>
+     <button class="m-close" id="mClose" aria-label="Close">✕</button></div>
+   <div class="m-body">
+     <div class="m-grid">
+       <div><div class="k">Team</div><select id="mTeam">${["Refactor","Current"].map(x=>`<option ${x===t.team?"selected":""}>${x}</option>`).join("")}</select></div>
+       <div><div class="k">Type</div><select id="mType">${["Feature","Bug"].map(x=>`<option ${x===t.type?"selected":""}>${x}</option>`).join("")}</select></div>
+       <div><div class="k">Month</div><select id="mMonth">${state.months.map(m=>`<option ${m.id===t.month?"selected":""}>${m.id}</option>`).join("")}</select></div>
+       <div><div class="k">Week</div><select id="mWeek">${weeksOf(t.month).map(w=>`<option ${w.id===t.week?"selected":""}>${w.id}</option>`).join("")}</select></div>
+       <div><div class="k">Jira</div><div class="v">${t.jira?`<a href="https://tradewize.atlassian.net/browse/${t.jira}" target="_blank" rel="noopener">${t.jira} ↗</a>`:"-"}</div></div>
+       <div><div class="k">Est AI</div><div class="v num">${t.est_ai_md} md</div></div>
+       <div><div class="k">Est actual (senior)</div><input id="mEst" inputmode="decimal" value="${t.est_actual_md??""}" placeholder="${t.est_ai_md}"></div>
+     </div>
+     <div><div class="k" style="margin-bottom:6px">OWNERS (click to toggle, multiple allowed)</div>
+       <div class="own-picker" id="mOwners">${state.members.map(m=>`<button type="button" class="own-opt ${t.owners.includes(m.name)?"on":""}" data-o="${m.name}">${m.name}</button>`).join("")}</div></div>
+     <div><div class="k" style="margin-bottom:6px">PROGRESS: ${Math.round(prog(t))}%</div>
+       <div class="prog-row">
+         <input type="range" id="mProg" min="0" max="100" step="5" value="${prog(t)}">
+         <span class="v num" id="mProgV" style="width:44px;text-align:right;font-weight:750">${Math.round(prog(t))}%</span>
+       </div>
+       <div class="prog-quick" style="margin-top:6px">${[0,20,50,80,100].map(v=>`<button type="button" data-p="${v}">${v}%</button>`).join("")}
+         <span class="sub" style="margin-left:8px">0 not started, 20 estimated, 50 coding, 80 in review, 100 verified</span></div></div>
+     ${t.note?`<div class="m-note"><b>Note:</b> ${t.note}</div>`:""}
+   </div>`;
+  dlg.showModal();
+  dlg.querySelector("#mClose").onclick=()=>dlg.close();
+  dlg.onclick=e=>{if(e.target===dlg)dlg.close();};
+  const upd=()=>{saveLocal(); scheduleRender();};
+  dlg.querySelector("#mTeam").onchange=e=>{t.team=e.target.value;upd();};
+  dlg.querySelector("#mType").onchange=e=>{t.type=e.target.value;upd();};
+  dlg.querySelector("#mMonth").onchange=e=>{t.month=e.target.value;
+    if(!weeksOf(t.month).some(w=>w.id===t.week))t.week=weeksOf(t.month)[0]?.id||"W1";
+    upd(); dlg.close(); setTimeout(()=>openTask(code),0);};
+  dlg.querySelector("#mWeek").onchange=e=>{t.week=e.target.value;upd();};
+  dlg.querySelector("#mEst").onchange=e=>{const v=e.target.value.trim();
+    t.est_actual_md=v===""?null:Math.max(0.25,parseFloat(v)||0); if(v!=="")e.target.value=t.est_actual_md; upd();};
+  dlg.querySelector("#mOwners").addEventListener("click",e=>{
+    const b=e.target.closest(".own-opt"); if(!b)return;
+    const n=b.dataset.o;
+    t.owners=t.owners.includes(n)?t.owners.filter(o=>o!==n):[...t.owners,n];
+    b.classList.toggle("on"); upd();
+  });
+  const rng=dlg.querySelector("#mProg"), out=dlg.querySelector("#mProgV");
+  rng.oninput=()=>{out.textContent=rng.value+"%";};
+  rng.onchange=()=>{t.progress=+rng.value; upd();};
+  dlg.querySelectorAll(".prog-quick button").forEach(b=>b.onclick=()=>{
+    t.progress=+b.dataset.p; rng.value=b.dataset.p; out.textContent=b.dataset.p+"%"; upd();});
+}
+
+/* ---------- add task ---------- */
+function nextCode(prefix){let mx=0;
+  for(const t of state.tasks){const m=t.code.match(new RegExp("^"+prefix+"(\\d+)$")); if(m)mx=Math.max(mx,+m[1]);}
+  return prefix+(mx+1);}
+document.getElementById("btnAddTask").onclick=()=>{
+  dlgForm.innerHTML=`
+   <div class="m-head"><div><span class="code">NEW TASK</span><h3>Add a task</h3></div>
+     <button class="m-close" id="fClose" aria-label="Close">✕</button></div>
+   <form class="f" id="tf">
+     <div><label>Type</label><select name="type"><option>Feature</option><option>Bug</option></select></div>
+     <div><label>Code</label><input name="code" value="${nextCode("F")}" required></div>
+     <div><label>Team</label><select name="team"><option>Current</option><option>Refactor</option></select></div>
+     <div><label>Month</label><select name="month">${state.months.map(m=>`<option ${m.id===activeMonth?"selected":""}>${m.id}</option>`).join("")}</select></div>
+     <div><label>Week</label><select name="week">${M().weeks.map(w=>`<option>${w.id}</option>`).join("")}</select></div>
+     <div><label>Priority</label><select name="priority"><option>P1</option><option>P0</option><option>P2</option><option>STG</option></select></div>
+     <div><label>Tag</label><input name="tag" placeholder="PO, OCR, Hotfix…"></div>
+     <div><label>Est AI (md)</label><input name="est_ai_md" inputmode="decimal" value="1" required></div>
+     <div><label>Jira key (optional)</label><input name="jira" placeholder="TD-xxx"></div>
+     <div class="full"><label>Task title (EN)</label><input name="name" required></div>
+     <div class="full"><label>Note (VI, optional)</label><input name="note"></div>
+     <div class="actions"><button type="button" id="fCancel">Cancel</button><button class="btn-primary" type="submit">Add task</button></div>
+   </form>`;
+  dlgForm.showModal();
+  const form=dlgForm.querySelector("#tf");
+  form.type.onchange=()=>{form.code.value=nextCode(form.type.value==="Bug"?"B":"F");};
+  form.month.onchange=()=>{form.week.innerHTML=weeksOf(form.month.value).map(w=>`<option>${w.id}</option>`).join("");};
+  dlgForm.querySelector("#fClose").onclick=dlgForm.querySelector("#fCancel").onclick=()=>dlgForm.close();
+  form.onsubmit=e=>{
+    e.preventDefault();
+    const f=Object.fromEntries(new FormData(form).entries());
+    if(state.tasks.some(t=>t.code===f.code)){uiAlert("That code already exists: "+f.code);return;}
+    state.tasks.push({code:f.code.trim(),jira:f.jira.trim()||null,name:f.name.trim(),type:f.type,team:f.team,
+      priority:f.priority,tag:f.tag.trim()||"-",month:f.month,week:f.week,owners:[],
+      est_ai_md:Math.max(0.25,parseFloat(f.est_ai_md)||1),est_actual_md:null,progress:0,
+      note:f.note.trim(),source:"ADDED-web"});
+    saveLocal(); scheduleRender(); dlgForm.close();
+  };
+};
+
+/* ---------- template / export / import / reset ---------- */
+function download(name,obj){
+  const b=new Blob([JSON.stringify(obj,null,1)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=name; a.click();
+}
+const _tpl=()=>download("tw-plan-template.json",{
+  _readme:"Fill this in, then Import on the board. Delete the _example rows first. progress is 0-100; owners must match member names; estimates are man-days.",
+  plan_name:"TradeWize Development Plan",
+  updated:new Date().toISOString().slice(0,10),
+  months:[{id:"T7",label:"JULY 2026",capacity:{W1:41,W2:52,W3:52,W4:52},
+    weeks:[{id:"W1",range:"Jul 06-12",start:"2026-07-06",end:"2026-07-12"},
+           {id:"W2",range:"Jul 13-19",start:"2026-07-13",end:"2026-07-19"},
+           {id:"W3",range:"Jul 20-26",start:"2026-07-20",end:"2026-07-26"},
+           {id:"W4",range:"Jul 27-31",start:"2026-07-27",end:"2026-07-31"}]}],
+  members:[{name:"_example Alex Tran",role:"Backend dev",level:"Senior",group:"Refactor",md_week:5,note:""}],
+  tasks:[{code:"F1",jira:"TD-000",name:"_example Build the thing",type:"Feature",team:"Refactor",
+    priority:"P0",tag:"PO",month:"T7",week:"W1",owners:[],est_ai_md:2,est_actual_md:null,progress:0,note:""}],
+});
+document.getElementById("btnExport").onclick=()=>download(
+  `tw-plan-full-${new Date().toISOString().slice(0,10)}.json`,
+  {plan_name:"TradeWize Development Plan",base_updated:DATA.updated,
+   exported:new Date().toISOString(),months:state.months,members:state.members,tasks:state.tasks});
+document.getElementById("btnImport").onclick=()=>document.getElementById("fileIn").click();
+document.getElementById("fileIn").onchange=e=>{
+  const f=e.target.files[0]; if(!f)return;
+  f.text().then(async txt=>{
+    const o=JSON.parse(txt);
+    if(o.months&&o.tasks){ // full plan: replace everything
+      if(!await uiConfirm("Import the full plan from this file? Current tasks, members and months will be replaced."))return;
+      state.months=o.months; state.members=o.members||state.members;
+      state.tasks=(o.tasks||[]).filter(t=>!String(t.name||"").startsWith("_example")&&t.code);
+      state.members=state.members.filter(m=>!String(m.name||"").startsWith("_example"));
+      state.tasks.forEach(t=>{t.owners=t.owners||[]; t.progress=+t.progress||0;
+        t.est_ai_md=+t.est_ai_md||+t.est_md||1; t.tag=t.tag||t.cluster||"-"; t.team=t.team||t.group;});
+      activeMonth=state.months[0].id;
+    } else { // legacy patch file
+      for(const u of o.edits||o.tasks||[]){const t=state.tasks.find(x=>x.code===u.code);
+        if(t){for(const k of ["est_actual_md","week","progress"])if(u[k]!==undefined)t[k]=u[k];
+          if(u.owner!==undefined)t.owners=u.owner?[u.owner]:[]; if(u.owners)t.owners=u.owners;}}
+      for(const nt of o.new_tasks||[])if(!state.tasks.some(t=>t.code===nt.code))state.tasks.push(nt);
+    }
+    saveLocal(); renderAll();
+  }).catch(err=>uiAlert("Could not read the JSON file: "+err.message));
+};
+
+
+/* ---------- deferred render ---------- */
+let renderQueued=false;
+function scheduleRender(){if(renderQueued)return;renderQueued=true;setTimeout(()=>{renderQueued=false;renderAll();},0);}
+
+/* ---------- boot ---------- */
+function renderAll(){
+  renderMonthbar(); renderTiles(); renderQF(); renderBoard(); renderPri(); renderWeekly(); renderLoad();
+  renderBacklog(); renderTimeline(); renderTeam();
+  const d=new Date(DATA.updated+"T00:00:00");
+  document.getElementById("subline").textContent=
+    "Last updated " + d.toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
+}
+renderAll();
+</script>
