@@ -359,8 +359,8 @@
 
   <footer class="note">
     This board is the client-facing report: timeline, workload and progress of the remote team. Jira stays the dev tool of record.
-    <b>Priority (P0-P3/STG)</b> and Jira status/assignee are shared live across everyone viewing this page.
-    Everything else (owners, progress, week planning) still lives in <b>your browser only</b> until exported to BA, who republishes.
+    Every edit here (priority, owners, progress, week/month, added tasks and members) is <b>shared live with everyone viewing this page</b> —
+    it saves to the server a moment after you make it, and other open tabs pick it up within ~20s or on next load. Jira status/assignee are read-only, pulled live from Jira.
   </footer>
 </div>
 
@@ -391,26 +391,45 @@ DATA.tasks.forEach((t,i)=>{ state.tasks[i].month = t.month || state.months.find(
     if(s && s.base===DATA.updated){ state=s.state; }
   }catch(e){}
 })();
+// ponytail: localStorage is now just an offline fallback cache (used only until the
+// first server fetch resolves, or if the network is down). The server copy (below)
+// is the real shared source of truth for everyone viewing the board.
 function saveLocal(){
   localStorage.setItem(LS_KEY,JSON.stringify({base:DATA.updated,state}));
+  pushToServer();
 }
 
-/* ---------- shared server sync: priority (P0-P3/STG) + live Jira status/assignee ---------- */
+/* ---------- shared server sync: whole board (tasks/months/members) + live Jira status/assignee ----------
+   ponytail: last-write-wins full-state overwrite, no per-field merge. Fine for a small
+   team saving occasionally; two people editing the same task within the same second
+   could clobber each other. Upgrade to a real merge/patch API if that starts happening. */
 let jiraInfo = {};
-async function postPriority(code,priority){
-  try{
-    const r=await fetch("/api/board",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,priority})});
-    if(!r.ok) throw new Error(await r.text());
-  }catch(e){ uiAlert("Could not save priority to the shared board (will only apply in your browser): "+e.message); }
+let pushTimer = null;
+function pushToServer(){
+  clearTimeout(pushTimer);
+  pushTimer=setTimeout(async()=>{
+    try{
+      const r=await fetch("/api/board",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({state:{months:state.months,members:state.members,tasks:state.tasks}})});
+      if(!r.ok) throw new Error(await r.text());
+    }catch(e){ console.error("board push failed",e); }
+  },1200);
 }
+function anyDialogOpen(){ return dlg.open||dlgForm.open||dlgMsg.open; }
 async function syncFromServer(){
   try{
     const keys=[...new Set(state.tasks.map(t=>t.jira).filter(Boolean))];
     const r=await fetch("/api/board?keys="+encodeURIComponent(keys.join(",")));
     if(!r.ok) return;
-    const {overrides,jira}=await r.json();
+    const {state:serverState,jira}=await r.json();
     jiraInfo=jira||{};
-    for(const t of state.tasks){ if(overrides?.[t.code]?.priority) t.priority=overrides[t.code].priority; }
+    if(serverState){
+      if(anyDialogOpen()) return; // don't yank state out from under an open edit dialog
+      state=serverState;
+      activeMonth = state.months.find(m=>state.tasks.some(t=>t.month===m.id))?.id || state.months[0].id;
+    } else {
+      pushToServer(); // first-ever load: seed the server with our baked-in default plan
+    }
     renderAll();
   }catch(e){ console.error("board sync failed",e); }
 }
@@ -789,7 +808,7 @@ function renderBacklog(){
       if(inp.dataset.f==="est_actual_md"){t.est_actual_md=v===""?null:Math.max(0.25,parseFloat(v)||0);}
       else if(inp.dataset.f==="progress"){t.progress=Math.max(0,Math.min(100,parseFloat(v)||0));}
       else if(inp.dataset.f==="week"){t.week=v;}
-      else if(inp.dataset.f==="priority"){t.priority=v; postPriority(t.code,v);}
+      else if(inp.dataset.f==="priority"){t.priority=v;}
       else if(inp.dataset.f==="month"){t.month=v; if(!weeksOf(v).some(w=>w.id===t.week))t.week=weeksOf(v)[0]?.id||"W1";}
       saveLocal(); scheduleRender();
     };
@@ -898,7 +917,7 @@ function openTask(code){
        <div><div class="k">Type</div><select id="mType">${["Feature","Bug"].map(x=>`<option ${x===t.type?"selected":""}>${x}</option>`).join("")}</select></div>
        <div><div class="k">Month</div><select id="mMonth">${state.months.map(m=>`<option ${m.id===t.month?"selected":""}>${m.id}</option>`).join("")}</select></div>
        <div><div class="k">Week</div><select id="mWeek">${weeksOf(t.month).map(w=>`<option ${w.id===t.week?"selected":""}>${w.id}</option>`).join("")}</select></div>
-       <div><div class="k">Priority (shared)</div><select id="mPriority">${["P0","P1","P2","P3","STG"].map(x=>`<option ${x===t.priority?"selected":""}>${x}</option>`).join("")}</select></div>
+       <div><div class="k">Priority</div><select id="mPriority">${["P0","P1","P2","P3","STG"].map(x=>`<option ${x===t.priority?"selected":""}>${x}</option>`).join("")}</select></div>
        <div><div class="k">Jira</div><div class="v">${t.jira?`<a href="https://tradewize.atlassian.net/browse/${t.jira}" target="_blank" rel="noopener">${t.jira} ↗</a>${jiraInfo[t.jira]?` <span class="sub">(${jiraInfo[t.jira].status||"-"} · ${jiraInfo[t.jira].assignee||"unassigned"})</span>`:""}`:"-"}</div></div>
        <div><div class="k">Est AI</div><div class="v num">${t.est_ai_md} md</div></div>
        <div><div class="k">Est actual (senior)</div><input id="mEst" inputmode="decimal" value="${t.est_actual_md??""}" placeholder="${t.est_ai_md}"></div>
@@ -924,7 +943,7 @@ function openTask(code){
     if(!weeksOf(t.month).some(w=>w.id===t.week))t.week=weeksOf(t.month)[0]?.id||"W1";
     upd(); dlg.close(); setTimeout(()=>openTask(code),0);};
   dlg.querySelector("#mWeek").onchange=e=>{t.week=e.target.value;upd();};
-  dlg.querySelector("#mPriority").onchange=e=>{t.priority=e.target.value; postPriority(t.code,t.priority); upd();};
+  dlg.querySelector("#mPriority").onchange=e=>{t.priority=e.target.value; upd();};
   dlg.querySelector("#mEst").onchange=e=>{const v=e.target.value.trim();
     t.est_actual_md=v===""?null:Math.max(0.25,parseFloat(v)||0); if(v!=="")e.target.value=t.est_actual_md; upd();};
   dlg.querySelector("#mOwners").addEventListener("click",e=>{
@@ -1040,4 +1059,6 @@ function renderAll(){
 }
 renderAll();
 syncFromServer();
+setInterval(syncFromServer,20000);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) syncFromServer(); });
 </script>

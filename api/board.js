@@ -1,10 +1,15 @@
-// Shared board state (priority overrides) persisted as a JSON file committed to this
-// same GitHub repo, plus a live Jira lookup for status/assignee. No database needed —
-// the repo already exists and is already the source of truth for the static page.
+// Shared board state (the whole tasks/months/members list) persisted as a JSON file
+// committed to this same GitHub repo, plus a live Jira lookup for status/assignee.
+// No database needed — the repo already exists and is already the source of truth
+// for the static page.
+//
+// ponytail: last-write-wins on the full state blob (no per-field merge/CRDT). Fine
+// for a small team saving occasionally; would need real conflict resolution if two
+// people are editing the same task within the same second.
 const GITHUB_REPO = process.env.BOARD_GITHUB_REPO || 'LucciHank/tradewize-board';
 const STATE_PATH = 'board-state.json';
 const GITHUB_API = 'https://api.github.com';
-const VALID_PRIORITIES = new Set(['P0', 'P1', 'P2', 'P3', 'STG']);
+
 // Jira account display names don't match the team's short names used on the board.
 // Mapped from every distinct assignee seen across the whole TD project (2026-07-07).
 const JIRA_NAME_MAP = {
@@ -15,10 +20,11 @@ const JIRA_NAME_MAP = {
   'Hiếu Lương': 'Hiếu',
   'Hoang Anh': 'Hoàng Anh',
   'Đinh Huyền Trang': 'Trang',
+  'Phan Thi Hoai Phuong': 'Phương',
 };
 const normalizeAssignee = name => (name == null ? null : (JIRA_NAME_MAP[name] || name));
 
-async function ghGetState() {
+async function ghGetFile() {
   const res = await fetch(`${GITHUB_API}/repos/${GITHUB_REPO}/contents/${STATE_PATH}`, {
     headers: {
       Authorization: `token ${process.env.GITHUB_TOKEN}`,
@@ -26,18 +32,20 @@ async function ghGetState() {
       Accept: 'application/vnd.github+json',
     },
   });
-  if (res.status === 404) return { sha: null, overrides: {} };
+  if (res.status === 404) return { sha: null, state: null };
   if (!res.ok) throw new Error(`GitHub read failed: ${res.status} ${await res.text()}`);
   const json = await res.json();
   const content = Buffer.from(json.content, 'base64').toString('utf8');
-  const data = content.trim() ? JSON.parse(content) : {};
-  return { sha: json.sha, overrides: data.overrides || {} };
+  const data = content.trim() ? JSON.parse(content) : null;
+  // Older deploys stored {overrides:{...}} only — that shape has no tasks, treat as empty.
+  const state = data && Array.isArray(data.tasks) ? data : null;
+  return { sha: json.sha, state };
 }
 
-async function ghPutState(overrides, sha, message) {
+async function ghPutFile(state, sha, message) {
   const body = {
     message,
-    content: Buffer.from(JSON.stringify({ overrides }, null, 2)).toString('base64'),
+    content: Buffer.from(JSON.stringify(state, null, 2)).toString('base64'),
     ...(sha ? { sha } : {}),
   };
   const res = await fetch(`${GITHUB_API}/repos/${GITHUB_REPO}/contents/${STATE_PATH}`, {
@@ -79,20 +87,19 @@ module.exports = async (req, res) => {
 
   try {
     if (req.method === 'POST') {
-      const { code, priority } = req.body || {};
-      if (!code || !VALID_PRIORITIES.has(priority)) {
-        return res.status(400).json({ error: 'code and a valid priority (P0/P1/P2/P3/STG) are required' });
+      const { state } = req.body || {};
+      if (!state || !Array.isArray(state.tasks) || !Array.isArray(state.months) || !Array.isArray(state.members)) {
+        return res.status(400).json({ error: 'body must be { state: { tasks, months, members } }' });
       }
-      const { sha, overrides } = await ghGetState();
-      overrides[code] = { priority, updated_at: new Date().toISOString() };
-      await ghPutState(overrides, sha, `board: set ${code} priority to ${priority}`);
-      return res.status(200).json({ ok: true, overrides });
+      const { sha } = await ghGetFile();
+      await ghPutFile(state, sha, `board: sync shared state (${new Date().toISOString()})`);
+      return res.status(200).json({ ok: true });
     }
 
-    const { overrides } = await ghGetState();
+    const { state } = await ghGetFile();
     const keys = String(req.query.keys || '').split(',').map(k => k.trim()).filter(Boolean);
     const jira = await jiraLookup([...new Set(keys)]);
-    return res.status(200).json({ overrides, jira });
+    return res.status(200).json({ state, jira });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
