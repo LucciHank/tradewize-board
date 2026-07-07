@@ -357,10 +357,13 @@
     </section>
   </div>
 
-  <footer class="note">
-    This board is the client-facing report: timeline, workload and progress of the remote team. Jira stays the dev tool of record.
-    Every edit here (priority, owners, progress, week/month, added tasks and members) is <b>shared live with everyone viewing this page</b> —
-    it saves to the server a moment after you make it, and other open tabs pick it up within ~20s or on next load. Jira status/assignee are read-only, pulled live from Jira.
+  <footer class="note" style="display:flex;justify-content:space-between;align-items:center">
+    <div>
+      This board is the client-facing report: timeline, workload and progress of the remote team. Jira stays the dev tool of record.
+      Every edit here (priority, owners, progress, week/month, added tasks and members) is <b>shared live with everyone viewing this page</b> —
+      it saves to the server a moment after you make it, and other open tabs pick it up within ~20s or on next load. Jira status/assignee are read-only, pulled live from Jira.
+    </div>
+    <button id="btnSyncJira" style="white-space:nowrap;margin-left:16px">🔄 Sync Jira</button>
   </footer>
 </div>
 
@@ -1044,6 +1047,104 @@ document.getElementById("fileIn").onchange=e=>{
   }).catch(err=>uiAlert("Could not read the JSON file: "+err.message));
 };
 
+/* ---------- Jira 2-way sync ---------- */
+async function syncWithJira(){
+  const keys=[...new Set(state.tasks.filter(t=>t.jira).map(t=>t.jira))];
+  if(!keys.length){uiAlert("No Jira tasks on this board");return;}
+  try{
+    const res=await fetch(`/api/board?keys=${keys.join(",")}`,{method:"GET"});
+    if(!res.ok){uiAlert("Failed to fetch Jira data");return;}
+    const data=await res.json();
+    const jira=data.jira||{};
+
+    // Find conflicts: board owner ≠ Jira assignee
+    const conflicts=[],changes=new Map();
+    for(const t of state.tasks){
+      if(!t.jira)continue;
+      const j=jira[t.jira];if(!j)continue;
+      const boardOwner=t.owners.length>0?t.owners[0]:"[none]";
+      const jiraOwner=j.assignee||"[none]";
+      if(boardOwner!==jiraOwner){
+        conflicts.push({code:t.code,name:t.name,boardOwner,jiraOwner,task:t,jiraInfo:j});
+      }
+    }
+
+    if(!conflicts.length){uiAlert("✓ Board and Jira are in sync");return;}
+
+    // Show conflict modal
+    const dlgSync=document.createElement("dialog");
+    dlgSync.style.cssText="max-width:800px;border-radius:12px";
+    dlgSync.innerHTML=`
+      <div class="m-head"><div>
+        <span class="code">2-WAY SYNC</span>
+        <h3>Found ${conflicts.length} mismatches between Board and Jira</h3></div>
+        <button class="m-close" aria-label="Close">✕</button></div>
+      <div class="m-body" style="max-height:60vh;overflow-y:auto">
+        <table style="width:100%;border-collapse:collapse">
+          <tr style="border-bottom:2px solid var(--hair)">
+            <th style="padding:8px;text-align:left;font-size:11px;font-weight:600;color:var(--ink-2)">TASK</th>
+            <th style="padding:8px;text-align:left;font-size:11px;font-weight:600;color:var(--ink-2)">BOARD OWNER</th>
+            <th style="padding:8px;text-align:left;font-size:11px;font-weight:600;color:var(--ink-2)">JIRA ASSIGNEE</th>
+            <th style="padding:8px;text-align:center;font-size:11px;font-weight:600;color:var(--ink-2)">ACTION</th>
+          </tr>
+          ${conflicts.map((c,i)=>`
+            <tr style="border-bottom:1px solid var(--hair-2)">
+              <td style="padding:8px"><b>${c.code}</b><br><span style="font-size:11px;color:var(--ink-2)">${c.name.slice(0,40)}</span></td>
+              <td style="padding:8px">${c.boardOwner}</td>
+              <td style="padding:8px">${c.jiraOwner}</td>
+              <td style="padding:8px;text-align:center">
+                <button type="button" data-i="${i}" data-a="board" style="font-size:11px;padding:4px 8px">Use Board</button>
+                <button type="button" data-i="${i}" data-a="jira" style="font-size:11px;padding:4px 8px;margin-left:4px">Use Jira</button>
+              </td>
+            </tr>
+          `).join("")}
+        </table>
+      </div>
+      <div style="padding:16px;border-top:1px solid var(--hair-2);display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" id="syncCancel">Cancel</button>
+        <button type="button" id="syncSubmit" class="btn-primary">Apply Changes</button>
+      </div>
+    `;
+    document.body.appendChild(dlgSync);
+    dlgSync.showModal();
+
+    // Track user's choice per conflict
+    const choices=new Map();
+    conflicts.forEach((c,i)=>choices.set(i,"board")); // default: use board
+
+    dlgSync.querySelectorAll("button[data-a]").forEach(btn=>{
+      btn.onclick=()=>{
+        const i=+btn.dataset.i;
+        choices.set(i,btn.dataset.a);
+        dlgSync.querySelectorAll(`button[data-i="${i}"]`).forEach(b=>b.style.opacity="0.5");
+        btn.style.opacity="1";
+      };
+    });
+
+    dlgSync.querySelector(".m-close").onclick=dlgSync.querySelector("#syncCancel").onclick=()=>{dlgSync.remove();};
+
+    dlgSync.querySelector("#syncSubmit").onclick=async()=>{
+      // Apply user's choices to state
+      conflicts.forEach((c,i)=>{
+        const action=choices.get(i);
+        if(action==="jira"){
+          c.task.owners=c.jiraOwner==="[none]"?[]:[c.jiraOwner];
+        }
+        // else: keep board owner (action==="board")
+      });
+
+      // Push to server
+      await pushToServer();
+      dlgSync.remove();
+      uiAlert("✓ Changes synced!");
+    };
+  }catch(err){
+    console.error(err);
+    uiAlert("Sync error: "+err.message);
+  }
+}
+
+document.getElementById("btnSyncJira").onclick=syncWithJira;
 
 /* ---------- deferred render ---------- */
 let renderQueued=false;
