@@ -262,7 +262,6 @@
   .prog-quick button{padding:5px 11px;font-size:11.5px;border-radius:980px}
   .m-note{font-size:12px;color:var(--ink-2);background:var(--card-2);border:1px solid var(--hair-2);border-radius:12px;padding:12px 14px;line-height:1.5}
   .danger{color:var(--late)}
-  footer.note{color:var(--ink-3);font-size:12px;border-top:1px solid var(--hair-2);padding-top:16px;line-height:1.6}
   form.f{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:13px;padding:18px 22px 22px}
   form.f label{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);display:block;margin-bottom:5px}
   form.f input,form.f select{width:100%;padding:8px 10px;border:1px solid var(--hair);border-radius:10px;font:500 13px/1.2 inherit}
@@ -282,6 +281,7 @@
     <button id="btnAddTask" class="btn-primary">+ Task</button>
     <button id="btnImport">Import</button>
     <button id="btnExport">Export</button>
+    <button id="btnSyncJira">🔄 Sync</button>
     <input type="file" id="fileIn" accept="application/json" hidden>
   </div>
   <nav class="tabs" id="tabs">
@@ -356,15 +356,6 @@
       <div class="tbl-scroll"><table class="grid" id="teamTable"></table></div>
     </section>
   </div>
-
-  <footer class="note" style="display:flex;justify-content:space-between;align-items:center">
-    <div>
-      This board is the client-facing report: timeline, workload and progress of the remote team. Jira stays the dev tool of record.
-      Every edit here (priority, owners, progress, week/month, added tasks and members) is <b>shared live with everyone viewing this page</b> —
-      it saves to the server a moment after you make it, and other open tabs pick it up within ~20s or on next load. Jira status/assignee are read-only, pulled live from Jira.
-    </div>
-    <button id="btnSyncJira" style="white-space:nowrap;margin-left:16px">🔄 Sync Jira</button>
-  </footer>
 </div>
 
 <dialog id="dlg"></dialog>
@@ -1085,6 +1076,7 @@ async function syncWithJira(){
             <th style="padding:8px;text-align:left;font-size:11px;font-weight:600;color:var(--ink-2)">TASK</th>
             <th style="padding:8px;text-align:left;font-size:11px;font-weight:600;color:var(--ink-2)">BOARD OWNER</th>
             <th style="padding:8px;text-align:left;font-size:11px;font-weight:600;color:var(--ink-2)">JIRA ASSIGNEE</th>
+            <th style="padding:8px;text-align:left;font-size:11px;font-weight:600;color:var(--ink-2)">JIRA STATUS</th>
             <th style="padding:8px;text-align:center;font-size:11px;font-weight:600;color:var(--ink-2)">ACTION</th>
           </tr>
           ${conflicts.map((c,i)=>`
@@ -1092,6 +1084,7 @@ async function syncWithJira(){
               <td style="padding:8px"><b>${c.code}</b><br><span style="font-size:11px;color:var(--ink-2)">${c.name.slice(0,40)}</span></td>
               <td style="padding:8px">${c.boardOwner}</td>
               <td style="padding:8px">${c.jiraOwner}</td>
+              <td style="padding:8px"><span style="font-size:11px;color:var(--ink-2)">${c.jiraInfo.status||"-"}</span></td>
               <td style="padding:8px;text-align:center">
                 <button type="button" data-i="${i}" data-a="board" style="font-size:11px;padding:4px 8px">Use Board</button>
                 <button type="button" data-i="${i}" data-a="jira" style="font-size:11px;padding:4px 8px;margin-left:4px">Use Jira</button>
@@ -1135,8 +1128,10 @@ async function syncWithJira(){
 
       // Push to server
       await pushToServer();
+      // Refresh Jira info to pick up latest status
+      await syncFromServer();
       dlgSync.remove();
-      uiAlert("✓ Changes synced!");
+      uiAlert("✓ Status & owners synced from Jira!");
     };
   }catch(err){
     console.error(err);
