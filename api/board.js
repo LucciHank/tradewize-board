@@ -5,6 +5,18 @@ const GITHUB_REPO = process.env.BOARD_GITHUB_REPO || 'LucciHank/tradewize-board'
 const STATE_PATH = 'board-state.json';
 const GITHUB_API = 'https://api.github.com';
 const VALID_PRIORITIES = new Set(['P0', 'P1', 'P2', 'P3', 'STG']);
+// Jira account display names don't match the team's short names used on the board.
+// Mapped from every distinct assignee seen across the whole TD project (2026-07-07).
+const JIRA_NAME_MAP = {
+  'Thai Tran Van': 'Thái',
+  'Hoang Tran': 'Hoàng',
+  'BimSpeed Hậu': 'Hậu',
+  'nguyen tran': 'Nguyên',
+  'Hiếu Lương': 'Hiếu',
+  'Hoang Anh': 'Hoàng Anh',
+  'Đinh Huyền Trang': 'Trang',
+};
+const normalizeAssignee = name => (name == null ? null : (JIRA_NAME_MAP[name] || name));
 
 async function ghGetState() {
   const res = await fetch(`${GITHUB_API}/repos/${GITHUB_REPO}/contents/${STATE_PATH}`, {
@@ -53,7 +65,7 @@ async function jiraLookup(keys) {
   for (const issue of json.issues || []) {
     map[issue.key] = {
       status: issue.fields?.status?.name || null,
-      assignee: issue.fields?.assignee?.displayName || null,
+      assignee: normalizeAssignee(issue.fields?.assignee?.displayName || null),
     };
   }
   return map;
