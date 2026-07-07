@@ -733,12 +733,15 @@
       "tag": "LD/Logs",
       "month": "T7",
       "week": "W1",
-      "owners": [],
+      "owners": [
+        "Lương"
+      ],
       "est_ai_md": 0.5,
       "est_actual_md": null,
       "progress": 0,
       "note": "TD-154 covers this only partially; needs a scoped child ticket",
-      "source": "Feroz"
+      "source": "Feroz",
+      "owner_updated_at": "2026-07-07T08:13:33.054Z"
     },
     {
       "code": "B6",
