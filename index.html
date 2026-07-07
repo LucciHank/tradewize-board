@@ -331,7 +331,7 @@
         <select id="fWeek"><option value="">Week: all</option></select>
         <select id="fTeam"><option value="">Team: all</option><option>Refactor</option><option>Current</option></select>
         <select id="fType"><option value="">Type: all</option><option>Feature</option><option>Bug</option></select>
-        <select id="fPri"><option value="">Priority: all</option><option>P0</option><option>P1</option><option>P2</option><option>STG</option></select>
+        <select id="fPri"><option value="">Priority: all</option><option>P0</option><option>P1</option><option>P2</option><option>P3</option><option>STG</option></select>
         <select id="fStat"><option value="">Status: all</option><option value="todo">Not started</option><option value="doing">In progress</option><option value="done">Done</option><option value="late">Late</option></select>
         <span class="sub num" id="countLine"></span>
       </div>
@@ -359,7 +359,8 @@
 
   <footer class="note">
     This board is the client-facing report: timeline, workload and progress of the remote team. Jira stays the dev tool of record.
-    Edits live in <b>your browser only</b> until exported to BA, who republishes. The URL never changes.
+    <b>Priority (P0-P3/STG)</b> and Jira status/assignee are shared live across everyone viewing this page.
+    Everything else (owners, progress, week planning) still lives in <b>your browser only</b> until exported to BA, who republishes.
   </footer>
 </div>
 
@@ -392,6 +393,26 @@ DATA.tasks.forEach((t,i)=>{ state.tasks[i].month = t.month || state.months.find(
 })();
 function saveLocal(){
   localStorage.setItem(LS_KEY,JSON.stringify({base:DATA.updated,state}));
+}
+
+/* ---------- shared server sync: priority (P0-P3/STG) + live Jira status/assignee ---------- */
+let jiraInfo = {};
+async function postPriority(code,priority){
+  try{
+    const r=await fetch("/api/board",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,priority})});
+    if(!r.ok) throw new Error(await r.text());
+  }catch(e){ uiAlert("Could not save priority to the shared board (will only apply in your browser): "+e.message); }
+}
+async function syncFromServer(){
+  try{
+    const keys=[...new Set(state.tasks.map(t=>t.jira).filter(Boolean))];
+    const r=await fetch("/api/board?keys="+encodeURIComponent(keys.join(",")));
+    if(!r.ok) return;
+    const {overrides,jira}=await r.json();
+    jiraInfo=jira||{};
+    for(const t of state.tasks){ if(overrides?.[t.code]?.priority) t.priority=overrides[t.code].priority; }
+    renderAll();
+  }catch(e){ console.error("board sync failed",e); }
 }
 let activeMonth = state.months.find(m=>state.tasks.some(t=>t.month===m.id))?.id || state.months[0].id;
 const M = ()=>state.months.find(m=>m.id===activeMonth);
@@ -526,7 +547,7 @@ function renderQF(){
   el.innerHTML=`<span class="lbl">Filter</span>`
    +owners.map(o=>`<button class="av ${qfState.owners.has(o)?"on":""}" data-own="${o}" title="${o}">${initials(o)}</button>`).join("")
    +`<button class="fchip ${qfState.owners.has("__un")?"on":""}" data-own="__un">Unassigned</button>`
-   +["P0","P1","P2","STG"].map(x=>`<button class="fchip ${qfState.pris.has(x)?"on":""}" data-pri="${x}">${x}</button>`).join("")
+   +["P0","P1","P2","P3","STG"].map(x=>`<button class="fchip ${qfState.pris.has(x)?"on":""}" data-pri="${x}">${x}</button>`).join("")
    +["Feature","Bug"].map(x=>`<button class="fchip ${qfState.types.has(x)?"on":""}" data-type="${x}">${x}</button>`).join("")
    +`<button class="fchip ${qfState.attention?"on":""}" data-att="1">⚠ Needs attention</button>`
    +((qfState.owners.size||qfState.pris.size||qfState.types.size||qfState.attention)?`<button class="fchip" data-clear="1">✕ Clear</button>`:"");
@@ -736,16 +757,16 @@ function renderBacklog(){
     if(!isNaN(na)&&!isNaN(nb)&&String(va).trim()!==""&&String(vb).trim()!=="")return(na-nb)*sortDir;
     return String(va).localeCompare(String(vb),undefined,{numeric:true})*sortDir;});
   document.getElementById("countLine").textContent=`${list.length} / ${mtasks().length} tasks`;
-  let h="<thead><tr>"+cols.map(c=>`<th class="sortable ${sortKey===c[0]?(sortDir>0?"sorted-asc":"sorted-desc"):""}" tabindex="0" data-k="${c[0]}">${c[1]}</th>`).join("")+"<th class=c>Month</th></tr></thead><tbody>";
+  let h="<thead><tr>"+cols.map(c=>`<th class="sortable ${sortKey===c[0]?(sortDir>0?"sorted-asc":"sorted-desc"):""}" tabindex="0" data-k="${c[0]}">${c[1]}</th>`).join("")+`<th class="c">Jira status</th><th class="c">Jira assignee</th><th class=c>Month</th></tr></thead><tbody>`;
   for(const t of list){
-    const p=prog(t),st=statusOf(t);
+    const p=prog(t),st=statusOf(t),ji=t.jira&&jiraInfo[t.jira];
     h+=`<tr class="${t.source==="ADDED-web"?"newrow":""}">
      <td><button class="codebtn num" data-code="${t.code}">${t.code}</button></td>
      <td>${t.jira?`<a href="https://tradewize.atlassian.net/browse/${t.jira}" target="_blank" rel="noopener">${t.jira}</a>`:"-"}</td>
      <td style="min-width:250px">${t.name}</td>
      <td class="c"><span class="tag ${t.team==="Refactor"?"ref":"cur"}">${t.team}</span></td>
      <td class="c"><span class="tag ${t.type==="Bug"?"bug":"feature"}">${t.type}</span></td>
-     <td class="c"><span class="tag ${({P0:"p0",P1:"p1",P2:"p2"})[t.priority]||"stg"}">${t.priority}</span></td>
+     <td class="c"><select data-code="${t.code}" data-f="priority">${["P0","P1","P2","P3","STG"].map(x=>`<option ${x===t.priority?"selected":""}>${x}</option>`).join("")}</select></td>
      <td class="c"><span class="tag plain">${t.tag}</span></td>
      <td class="c"><select data-code="${t.code}" data-f="week">${M().weeks.map(w=>`<option ${w.id===t.week?"selected":""}>${w.id}</option>`).join("")}</select></td>
      <td><div class="owners-cell" data-code="${t.code}">${t.owners.map(o=>`<span class="owner-pill">${o}<button data-rm="${o}" aria-label="remove ${o}">✕</button></span>`).join("")}
@@ -754,6 +775,8 @@ function renderBacklog(){
      <td class="c"><input class="est num" inputmode="decimal" data-code="${t.code}" data-f="est_actual_md" value="${t.est_actual_md??""}" placeholder="${t.est_ai_md}"></td>
      <td class="c"><input class="prog num" inputmode="numeric" data-code="${t.code}" data-f="progress" value="${p}"></td>
      <td class="c"><span class="tag status-${st==="risk"?"doing":st}">${st==="risk"?"at risk":st==="doing"?"in progress":st==="todo"?"not started":st}</span></td>
+     <td class="c"><span class="tag plain">${ji?.status||"-"}</span></td>
+     <td class="c sub">${ji?.assignee||"-"}</td>
      <td class="c"><select data-code="${t.code}" data-f="month">${state.months.map(m=>`<option ${m.id===t.month?"selected":""}>${m.id}</option>`).join("")}</select></td></tr>`;
   }
   const el=document.getElementById("blTable"); el.innerHTML=h+"</tbody>";
@@ -766,6 +789,7 @@ function renderBacklog(){
       if(inp.dataset.f==="est_actual_md"){t.est_actual_md=v===""?null:Math.max(0.25,parseFloat(v)||0);}
       else if(inp.dataset.f==="progress"){t.progress=Math.max(0,Math.min(100,parseFloat(v)||0));}
       else if(inp.dataset.f==="week"){t.week=v;}
+      else if(inp.dataset.f==="priority"){t.priority=v; postPriority(t.code,v);}
       else if(inp.dataset.f==="month"){t.month=v; if(!weeksOf(v).some(w=>w.id===t.week))t.week=weeksOf(v)[0]?.id||"W1";}
       saveLocal(); scheduleRender();
     };
@@ -874,7 +898,8 @@ function openTask(code){
        <div><div class="k">Type</div><select id="mType">${["Feature","Bug"].map(x=>`<option ${x===t.type?"selected":""}>${x}</option>`).join("")}</select></div>
        <div><div class="k">Month</div><select id="mMonth">${state.months.map(m=>`<option ${m.id===t.month?"selected":""}>${m.id}</option>`).join("")}</select></div>
        <div><div class="k">Week</div><select id="mWeek">${weeksOf(t.month).map(w=>`<option ${w.id===t.week?"selected":""}>${w.id}</option>`).join("")}</select></div>
-       <div><div class="k">Jira</div><div class="v">${t.jira?`<a href="https://tradewize.atlassian.net/browse/${t.jira}" target="_blank" rel="noopener">${t.jira} ↗</a>`:"-"}</div></div>
+       <div><div class="k">Priority (shared)</div><select id="mPriority">${["P0","P1","P2","P3","STG"].map(x=>`<option ${x===t.priority?"selected":""}>${x}</option>`).join("")}</select></div>
+       <div><div class="k">Jira</div><div class="v">${t.jira?`<a href="https://tradewize.atlassian.net/browse/${t.jira}" target="_blank" rel="noopener">${t.jira} ↗</a>${jiraInfo[t.jira]?` <span class="sub">(${jiraInfo[t.jira].status||"-"} · ${jiraInfo[t.jira].assignee||"unassigned"})</span>`:""}`:"-"}</div></div>
        <div><div class="k">Est AI</div><div class="v num">${t.est_ai_md} md</div></div>
        <div><div class="k">Est actual (senior)</div><input id="mEst" inputmode="decimal" value="${t.est_actual_md??""}" placeholder="${t.est_ai_md}"></div>
      </div>
@@ -899,6 +924,7 @@ function openTask(code){
     if(!weeksOf(t.month).some(w=>w.id===t.week))t.week=weeksOf(t.month)[0]?.id||"W1";
     upd(); dlg.close(); setTimeout(()=>openTask(code),0);};
   dlg.querySelector("#mWeek").onchange=e=>{t.week=e.target.value;upd();};
+  dlg.querySelector("#mPriority").onchange=e=>{t.priority=e.target.value; postPriority(t.code,t.priority); upd();};
   dlg.querySelector("#mEst").onchange=e=>{const v=e.target.value.trim();
     t.est_actual_md=v===""?null:Math.max(0.25,parseFloat(v)||0); if(v!=="")e.target.value=t.est_actual_md; upd();};
   dlg.querySelector("#mOwners").addEventListener("click",e=>{
@@ -1013,4 +1039,5 @@ function renderAll(){
     "Last updated " + d.toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
 }
 renderAll();
+syncFromServer();
 </script>
