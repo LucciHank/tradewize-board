@@ -295,7 +295,7 @@
       ],
       "est_ai_md": 4.5,
       "est_actual_md": null,
-      "progress": 0,
+      "progress": 20,
       "note": "Consolidate all timezone tickets under epic TD-126; fix the core helper instead of ~84 call sites",
       "source": "Feroz",
       "owner_updated_at": "2026-07-07T05:31:09.360Z"
