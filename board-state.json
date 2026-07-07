@@ -165,46 +165,6 @@
       "note": "Needs detailed task briefs; not in dev capacity"
     },
     {
-      "name": "VA-Senior-1",
-      "role": "Developer (Viet Anh squad)",
-      "level": "Senior",
-      "group": "Refactor",
-      "md_week": 5,
-      "note": "W1 counted as 3 md (mid-week onboarding)"
-    },
-    {
-      "name": "VA-Senior-2",
-      "role": "Developer (Viet Anh squad)",
-      "level": "Senior",
-      "group": "Current",
-      "md_week": 5,
-      "note": "W1 counted as 3 md"
-    },
-    {
-      "name": "VA-Junior-1",
-      "role": "Developer (Viet Anh squad)",
-      "level": "Junior",
-      "group": "Refactor",
-      "md_week": 5,
-      "note": "W1 counted as 3 md; junior, AI-assisted"
-    },
-    {
-      "name": "VA-Junior-2",
-      "role": "Developer (Viet Anh squad)",
-      "level": "Junior",
-      "group": "Current",
-      "md_week": 5,
-      "note": "W1 counted as 3 md; junior, AI-assisted"
-    },
-    {
-      "name": "VA-Junior-3",
-      "role": "Developer (Viet Anh squad)",
-      "level": "Junior",
-      "group": "Current",
-      "md_week": 5,
-      "note": "W1 counted as 3 md; junior, AI-assisted"
-    },
-    {
       "name": "Quang Hoàng",
       "role": "Business analyst",
       "level": "Junior",
