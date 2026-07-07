@@ -225,14 +225,15 @@
       "month": "T7",
       "week": "W1",
       "owners": [
-        "Anh Thái (Thai Tran Van)"
+        "Anh Thái (Thai Tran Van)",
+        "Lương"
       ],
       "est_ai_md": 4.5,
       "est_actual_md": null,
       "progress": 0,
       "note": "Consolidate all timezone tickets under epic TD-126; fix the core helper instead of ~84 call sites",
       "source": "Feroz",
-      "owner_updated_at": "2026-07-07T05:30:48.910Z"
+      "owner_updated_at": "2026-07-07T05:31:09.360Z"
     },
     {
       "code": "F1.1",
