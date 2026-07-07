@@ -491,12 +491,15 @@
       "tag": "Timezone",
       "month": "T7",
       "week": "W1",
-      "owners": [],
+      "owners": [
+        "Anh Thái (Thai Tran Van)"
+      ],
       "est_ai_md": 4.5,
       "est_actual_md": null,
       "progress": 20,
       "note": "",
-      "source": "Feroz"
+      "source": "Feroz",
+      "owner_updated_at": "2026-07-07T06:54:30.568Z"
     },
     {
       "code": "F1.2",
