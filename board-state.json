@@ -5,7 +5,7 @@
       "label": "July 2026",
       "tasksMonth": true,
       "capacity": {
-        "W1": 41,
+        "W1": 65,
         "W2": 52,
         "W3": 52,
         "W4": 52
@@ -211,9 +211,76 @@
       "group": "Shared",
       "md_week": 5,
       "note": "Second BA on the team"
+    },
+    {
+      "name": "Quang",
+      "role": "Business analyst",
+      "level": "Junior",
+      "group": "Shared",
+      "md_week": 5,
+      "note": "New BA, onboarding"
+    },
+    {
+      "name": "Lực",
+      "role": "Developer",
+      "level": "Junior",
+      "group": "Current",
+      "md_week": 5,
+      "note": "Junior, AI-assisted, new hire"
+    },
+    {
+      "name": "Phú",
+      "role": "Developer",
+      "level": "Junior",
+      "group": "Current",
+      "md_week": 5,
+      "note": "Junior, AI-assisted, new hire"
+    },
+    {
+      "name": "Đạt",
+      "role": "Developer / BA",
+      "level": "Junior",
+      "group": "Current",
+      "md_week": 5,
+      "note": "Junior dev + BA, new hire"
+    },
+    {
+      "name": "Giang",
+      "role": "Developer",
+      "level": "Junior",
+      "group": "Current",
+      "md_week": 5,
+      "note": "Junior, AI-assisted, new hire"
+    },
+    {
+      "name": "Chỉnh",
+      "role": "Developer (middle)",
+      "level": "Middle",
+      "group": "Current",
+      "md_week": 5,
+      "note": "Middle dev, new hire"
     }
   ],
   "tasks": [
+    {
+      "code": "F_ADMIN",
+      "jira": null,
+      "name": "Roles & permission in Admin",
+      "type": "Feature",
+      "team": "Current",
+      "priority": "P0",
+      "tag": "Admin",
+      "month": "T7",
+      "week": "W1",
+      "owners": [
+        "Chỉnh"
+      ],
+      "est_ai_md": 2,
+      "est_actual_md": null,
+      "progress": 0,
+      "note": "New high-priority feature",
+      "source": "Hoàng Anh"
+    },
     {
       "code": "F3.1",
       "jira": "TD-126",
@@ -305,7 +372,9 @@
       "tag": "How-to",
       "month": "T7",
       "week": "W1",
-      "owners": [],
+      "owners": [
+        "Đạt"
+      ],
       "est_ai_md": 1.25,
       "est_actual_md": null,
       "progress": 0,
@@ -341,7 +410,9 @@
       "tag": "Staging",
       "month": "T7",
       "week": "W1",
-      "owners": [],
+      "owners": [
+        "Lực"
+      ],
       "est_ai_md": 0.75,
       "est_actual_md": null,
       "progress": 0,
@@ -358,7 +429,9 @@
       "tag": "Staging",
       "month": "T7",
       "week": "W1",
-      "owners": [],
+      "owners": [
+        "Phú"
+      ],
       "est_ai_md": 1,
       "est_actual_md": null,
       "progress": 0,
@@ -375,7 +448,9 @@
       "tag": "Staging",
       "month": "T7",
       "week": "W1",
-      "owners": [],
+      "owners": [
+        "Giang"
+      ],
       "est_ai_md": 0.5,
       "est_actual_md": null,
       "progress": 0,
@@ -392,7 +467,9 @@
       "tag": "Onboard-polish",
       "month": "T7",
       "week": "W1",
-      "owners": [],
+      "owners": [
+        "Quang"
+      ],
       "est_ai_md": 0.75,
       "est_actual_md": null,
       "progress": 0,
@@ -409,7 +486,9 @@
       "tag": "Verify",
       "month": "T7",
       "week": "W1",
-      "owners": [],
+      "owners": [
+        "Quang"
+      ],
       "est_ai_md": 0.5,
       "est_actual_md": null,
       "progress": 0,
