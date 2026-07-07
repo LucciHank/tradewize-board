@@ -242,13 +242,16 @@
       "month": "T7",
       "week": "W1",
       "owners": [
-        "Anh Hậu"
+        "Anh Hậu",
+        "Anh Hoàng",
+        "Hoàng Anh"
       ],
       "est_ai_md": 3,
       "est_actual_md": null,
       "progress": 0,
       "note": "PENDING DESIGN: design must be finalized in W1 or W2 slips",
-      "source": "Feroz"
+      "source": "Feroz",
+      "owner_updated_at": "2026-07-07T05:30:19.780Z"
     },
     {
       "code": "F2.1",
