@@ -398,6 +398,9 @@ function saveLocal(){
    team saving occasionally; two people editing the same task within the same second
    could clobber each other. Upgrade to a real merge/patch API if that starts happening. */
 let jiraInfo = {};
+// Jira status -> board progress %, per the team's fixed workflow (case-insensitive).
+const STATUS_PCT = {"to do":0,"in progress":20,"review code":40,"deploy in test":60,
+  "review in staging":80,"review in production":90,"done":100};
 let pushTimer = null;
 function pushToServer(){
   clearTimeout(pushTimer);
@@ -420,6 +423,14 @@ async function syncFromServer(){
     if(serverState){
       if(anyDialogOpen()) return; // don't yank state out from under an open edit dialog
       state=serverState;
+      // Jira is the source of truth for assignee + status on any task linked to a key
+      // (owners/progress typed on the board only take effect until the next Jira sync).
+      for(const t of state.tasks){
+        const j=t.jira&&jiraInfo[t.jira]; if(!j)continue;
+        t.owners=j.assignee?[j.assignee]:[];
+        const pct=STATUS_PCT[(j.status||"").trim().toLowerCase()];
+        if(pct!=null)t.progress=pct;
+      }
       activeMonth = state.months.find(m=>state.tasks.some(t=>t.month===m.id))?.id || state.months[0].id;
     } else {
       pushToServer(); // first-ever load: seed the server with our baked-in default plan
@@ -906,31 +917,48 @@ function openTask(code){
      <h3>${t.name}</h3></div>
      <button class="m-close" id="mClose" aria-label="Close">✕</button></div>
    <div class="m-body">
+     <div><div class="k">Task title (EN)</div><input id="mName" style="width:100%" value="${t.name.replace(/"/g,"&quot;")}"></div>
      <div class="m-grid">
        <div><div class="k">Team</div><select id="mTeam">${["Refactor","Current"].map(x=>`<option ${x===t.team?"selected":""}>${x}</option>`).join("")}</select></div>
        <div><div class="k">Type</div><select id="mType">${["Feature","Bug"].map(x=>`<option ${x===t.type?"selected":""}>${x}</option>`).join("")}</select></div>
        <div><div class="k">Month</div><select id="mMonth">${state.months.map(m=>`<option ${m.id===t.month?"selected":""}>${m.id}</option>`).join("")}</select></div>
        <div><div class="k">Week</div><select id="mWeek">${weeksOf(t.month).map(w=>`<option ${w.id===t.week?"selected":""}>${w.id}</option>`).join("")}</select></div>
        <div><div class="k">Priority</div><select id="mPriority">${["P0","P1","P2","P3","STG"].map(x=>`<option ${x===t.priority?"selected":""}>${x}</option>`).join("")}</select></div>
-       <div><div class="k">Jira</div><div class="v">${t.jira?`<a href="https://tradewize.atlassian.net/browse/${t.jira}" target="_blank" rel="noopener">${t.jira} ↗</a>${jiraInfo[t.jira]?` <span class="sub">(${jiraInfo[t.jira].status||"-"} · ${jiraInfo[t.jira].assignee||"unassigned"})</span>`:""}`:"-"}</div></div>
+       <div><div class="k">Tag</div><input id="mTag" value="${(t.tag||"").replace(/"/g,"&quot;")}"></div>
+       <div><div class="k">Jira key</div><input id="mJira" value="${t.jira||""}" placeholder="TD-xxx (blank = no Jira link)">
+         ${t.jira?`<div class="sub" style="margin-top:4px"><a href="https://tradewize.atlassian.net/browse/${t.jira}" target="_blank" rel="noopener">${t.jira} ↗</a>${jiraInfo[t.jira]?` (${jiraInfo[t.jira].status||"-"} · ${jiraInfo[t.jira].assignee||"unassigned"})`:""}</div>`:""}</div>
        <div><div class="k">Est AI</div><div class="v num">${t.est_ai_md} md</div></div>
        <div><div class="k">Est actual (senior)</div><input id="mEst" inputmode="decimal" value="${t.est_actual_md??""}" placeholder="${t.est_ai_md}"></div>
      </div>
-     <div><div class="k" style="margin-bottom:6px">OWNERS (click to toggle, multiple allowed)</div>
+     <div><div class="k" style="margin-bottom:6px">OWNERS (click to toggle, multiple allowed)${t.jira?' <span class="sub">— editing here re-assigns the Jira issue too</span>':""}</div>
        <div class="own-picker" id="mOwners">${state.members.map(m=>`<button type="button" class="own-opt ${t.owners.includes(m.name)?"on":""}" data-o="${m.name}">${m.name}</button>`).join("")}</div></div>
-     <div><div class="k" style="margin-bottom:6px">PROGRESS: ${Math.round(prog(t))}%</div>
+     <div><div class="k" style="margin-bottom:6px">PROGRESS: ${Math.round(prog(t))}%${t.jira?" (driven by Jira status)":""}</div>
        <div class="prog-row">
-         <input type="range" id="mProg" min="0" max="100" step="5" value="${prog(t)}">
+         <input type="range" id="mProg" min="0" max="100" step="5" value="${prog(t)}" ${t.jira?"disabled":""}>
          <span class="v num" id="mProgV" style="width:44px;text-align:right;font-weight:750">${Math.round(prog(t))}%</span>
        </div>
-       <div class="prog-quick" style="margin-top:6px">${[0,20,50,80,100].map(v=>`<button type="button" data-p="${v}">${v}%</button>`).join("")}
-         <span class="sub" style="margin-left:8px">0 not started, 20 estimated, 50 coding, 80 in review, 100 verified</span></div></div>
-     ${t.note?`<div class="m-note"><b>Note:</b> ${t.note}</div>`:""}
+       ${t.jira?'<div class="sub" style="margin-top:6px">Linked to a Jira key — progress follows the Jira status (To Do 0% · In Progress 20% · Review Code 40% · Deploy in Test 60% · Review in Staging 80% · Review in Production 90% · Done 100%). Remove the Jira key to set progress manually.</div>':
+       `<div class="prog-quick" style="margin-top:6px">${[0,20,50,80,100].map(v=>`<button type="button" data-p="${v}">${v}%</button>`).join("")}
+         <span class="sub" style="margin-left:8px">0 not started, 20 estimated, 50 coding, 80 in review, 100 verified</span></div>`}</div>
+     <div><div class="k">Note (VI, optional)</div><input id="mNote" style="width:100%" value="${(t.note||"").replace(/"/g,"&quot;")}"></div>
+     <div class="actions" style="margin-top:12px"><button type="button" id="mDelete" style="color:var(--late)">Delete task</button></div>
    </div>`;
   dlg.showModal();
   dlg.querySelector("#mClose").onclick=()=>dlg.close();
   dlg.onclick=e=>{if(e.target===dlg)dlg.close();};
   const upd=()=>{saveLocal(); scheduleRender();};
+  dlg.querySelector("#mName").onchange=e=>{t.name=e.target.value.trim()||t.name;upd();};
+  dlg.querySelector("#mTag").onchange=e=>{t.tag=e.target.value.trim();upd();};
+  dlg.querySelector("#mNote").onchange=e=>{t.note=e.target.value.trim();upd();};
+  dlg.querySelector("#mJira").onchange=e=>{
+    t.jira=e.target.value.trim().toUpperCase()||null;
+    upd(); dlg.close(); setTimeout(()=>openTask(code),0); // re-render: link + progress lock depend on this
+  };
+  dlg.querySelector("#mDelete").onclick=()=>{
+    if(!confirm(`Delete task ${t.code}? This cannot be undone.`))return;
+    state.tasks=state.tasks.filter(x=>x.code!==code);
+    saveLocal(); scheduleRender(); dlg.close();
+  };
   dlg.querySelector("#mTeam").onchange=e=>{t.team=e.target.value;upd();};
   dlg.querySelector("#mType").onchange=e=>{t.type=e.target.value;upd();};
   dlg.querySelector("#mMonth").onchange=e=>{t.month=e.target.value;
@@ -1038,105 +1066,16 @@ document.getElementById("fileIn").onchange=e=>{
   }).catch(err=>uiAlert("Could not read the JSON file: "+err.message));
 };
 
-/* ---------- Jira 2-way sync ---------- */
+/* ---------- Jira 2-way sync ----------
+   Owners/progress for any task with a Jira key are overlaid from Jira on every
+   syncFromServer() poll (see above) — Jira is always the source of truth for those
+   two fields, so there's nothing to reconcile here. This button just forces an
+   immediate refresh instead of waiting for the 20s poll. */
 async function syncWithJira(){
   const keys=[...new Set(state.tasks.filter(t=>t.jira).map(t=>t.jira))];
   if(!keys.length){uiAlert("No Jira tasks on this board");return;}
-  try{
-    const res=await fetch(`/api/board?keys=${keys.join(",")}`,{method:"GET"});
-    if(!res.ok){uiAlert("Failed to fetch Jira data");return;}
-    const data=await res.json();
-    const jira=data.jira||{};
-
-    // Find conflicts: board owner ≠ Jira assignee
-    const conflicts=[],changes=new Map();
-    for(const t of state.tasks){
-      if(!t.jira)continue;
-      const j=jira[t.jira];if(!j)continue;
-      const boardOwner=t.owners.length>0?t.owners[0]:"[none]";
-      const jiraOwner=j.assignee||"[none]";
-      if(boardOwner!==jiraOwner){
-        conflicts.push({code:t.code,name:t.name,boardOwner,jiraOwner,task:t,jiraInfo:j});
-      }
-    }
-
-    if(!conflicts.length){uiAlert("✓ Board and Jira are in sync");return;}
-
-    // Show conflict modal
-    const dlgSync=document.createElement("dialog");
-    dlgSync.style.cssText="max-width:800px;border-radius:12px";
-    dlgSync.innerHTML=`
-      <div class="m-head"><div>
-        <span class="code">2-WAY SYNC</span>
-        <h3>Found ${conflicts.length} mismatches between Board and Jira</h3></div>
-        <button class="m-close" aria-label="Close">✕</button></div>
-      <div class="m-body" style="max-height:60vh;overflow-y:auto">
-        <table style="width:100%;border-collapse:collapse">
-          <tr style="border-bottom:2px solid var(--hair)">
-            <th style="padding:8px;text-align:left;font-size:11px;font-weight:600;color:var(--ink-2)">TASK</th>
-            <th style="padding:8px;text-align:left;font-size:11px;font-weight:600;color:var(--ink-2)">BOARD OWNER</th>
-            <th style="padding:8px;text-align:left;font-size:11px;font-weight:600;color:var(--ink-2)">JIRA ASSIGNEE</th>
-            <th style="padding:8px;text-align:left;font-size:11px;font-weight:600;color:var(--ink-2)">JIRA STATUS</th>
-            <th style="padding:8px;text-align:center;font-size:11px;font-weight:600;color:var(--ink-2)">ACTION</th>
-          </tr>
-          ${conflicts.map((c,i)=>`
-            <tr style="border-bottom:1px solid var(--hair-2)">
-              <td style="padding:8px"><b>${c.code}</b><br><span style="font-size:11px;color:var(--ink-2)">${c.name.slice(0,40)}</span></td>
-              <td style="padding:8px">${c.boardOwner}</td>
-              <td style="padding:8px">${c.jiraOwner}</td>
-              <td style="padding:8px"><span style="font-size:11px;color:var(--ink-2)">${c.jiraInfo.status||"-"}</span></td>
-              <td style="padding:8px;text-align:center">
-                <button type="button" data-i="${i}" data-a="board" style="font-size:11px;padding:4px 8px">Use Board</button>
-                <button type="button" data-i="${i}" data-a="jira" style="font-size:11px;padding:4px 8px;margin-left:4px">Use Jira</button>
-              </td>
-            </tr>
-          `).join("")}
-        </table>
-      </div>
-      <div style="padding:16px;border-top:1px solid var(--hair-2);display:flex;gap:8px;justify-content:flex-end">
-        <button type="button" id="syncCancel">Cancel</button>
-        <button type="button" id="syncSubmit" class="btn-primary">Apply Changes</button>
-      </div>
-    `;
-    document.body.appendChild(dlgSync);
-    dlgSync.showModal();
-
-    // Track user's choice per conflict
-    const choices=new Map();
-    conflicts.forEach((c,i)=>choices.set(i,"board")); // default: use board
-
-    dlgSync.querySelectorAll("button[data-a]").forEach(btn=>{
-      btn.onclick=()=>{
-        const i=+btn.dataset.i;
-        choices.set(i,btn.dataset.a);
-        dlgSync.querySelectorAll(`button[data-i="${i}"]`).forEach(b=>b.style.opacity="0.5");
-        btn.style.opacity="1";
-      };
-    });
-
-    dlgSync.querySelector(".m-close").onclick=dlgSync.querySelector("#syncCancel").onclick=()=>{dlgSync.remove();};
-
-    dlgSync.querySelector("#syncSubmit").onclick=async()=>{
-      // Apply user's choices to state
-      conflicts.forEach((c,i)=>{
-        const action=choices.get(i);
-        if(action==="jira"){
-          c.task.owners=c.jiraOwner==="[none]"?[]:[c.jiraOwner];
-        }
-        // else: keep board owner (action==="board")
-      });
-
-      // Push to server
-      await pushToServer();
-      // Refresh Jira info to pick up latest status
-      await syncFromServer();
-      dlgSync.remove();
-      uiAlert("✓ Status & owners synced from Jira!");
-    };
-  }catch(err){
-    console.error(err);
-    uiAlert("Sync error: "+err.message);
-  }
+  await syncFromServer();
+  uiAlert("✓ Synced with Jira (owners & status)");
 }
 
 document.getElementById("btnSyncJira").onclick=syncWithJira;
