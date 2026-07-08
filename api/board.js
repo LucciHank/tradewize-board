@@ -20,13 +20,14 @@ const JIRA_NAME_MAP = {
   'Hoang Anh': 'Hoàng Anh',
   'Đinh Huyền Trang': 'Trang',
   'Phan Thi Hoai Phuong': 'Phương',
-  // New team members (added 07/07) — verify Jira display names and update if different
+  // New team members (added 07/07) — Jira display names confirmed 07/08
   'Quang': 'Quang',
-  'Lực': 'Lực',
-  'Phú': 'Phú',
-  'Đạt': 'Đạt',
+  'Luc Pham': 'Lực',
+  'Đàm Phú': 'Phú',
+  'Nguyễn Gia Đạt': 'Đạt',
   'Giang': 'Giang',
   'Chỉnh': 'Chỉnh',
+  'hoanganhvutk31': 'Vũ',
 };
 const normalizeAssignee = name => (name == null ? null : (JIRA_NAME_MAP[name] || name));
 

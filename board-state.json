@@ -219,6 +219,14 @@
       "group": "Current",
       "md_week": 5,
       "note": "Middle dev, new hire"
+    },
+    {
+      "name": "Vũ",
+      "role": "Developer",
+      "level": "Junior",
+      "group": "Current",
+      "md_week": 5,
+      "note": "Jira account hoanganhvutk31 — role/team/md_week unconfirmed, update if different"
     }
   ],
   "tasks": [

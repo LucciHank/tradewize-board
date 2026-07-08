@@ -27,6 +27,7 @@
   .num{font-variant-numeric:tabular-nums}
   ::selection{background:rgba(0,113,227,.18)}
   .wrap{max-width:1360px;margin:0 auto;padding:8px 22px 64px}
+  #pane-backlog{max-width:100vw;width:100vw;margin-left:calc(50% - 50vw);padding:0 22px}
 
   /* ── Frosted chrome (Apple nav style) ── */
   header.top{position:sticky;top:0;z-index:30;
@@ -199,6 +200,8 @@
   .grid tbody tr{transition:background .18s var(--ease)}
   .grid tbody tr:hover td{background:var(--card-2)}
   .grid .codebtn{background:none;border:none;padding:0;color:var(--accent);font-weight:600;cursor:pointer;border-radius:4px}
+  .grid .tname{background:none;border:none;padding:0;color:var(--ink);font:inherit;text-align:left;cursor:pointer;border-radius:4px}
+  .grid .tname:hover{color:var(--accent);text-decoration:underline}
   .grid .codebtn:hover{text-decoration:underline;background:none;transform:none}
   .grid select,.grid input{padding:5px 8px;border-radius:8px;font-size:12px;max-width:140px}
   .grid input.est{width:60px;text-align:center;background:#fff8e6;border-color:rgba(255,204,0,.4)}
@@ -760,7 +763,7 @@ const cols=[["code","Code",t=>t.code],["jira","Jira",t=>t.jira||""],["name","Tas
   ["team","Team",t=>t.team],["type","Type",t=>t.type],["priority","Pri",t=>t.priority],
   ["tag","Tag",t=>t.tag],["week","Week",t=>t.week],["owners","Owners",t=>ownersTxt(t)],
   ["est_ai_md","Est AI",t=>+t.est_ai_md||0],["est_actual_md","Actual",t=>t.est_actual_md??""],
-  ["progress","%",t=>prog(t)],["status","Status",t=>statusOf(t)]];
+  ["progress","%",t=>prog(t)]];
 function filtered(){
   const q=document.getElementById("q").value.trim().toLowerCase();
   const f=id=>document.getElementById(id).value;
@@ -781,13 +784,13 @@ function renderBacklog(){
     if(!isNaN(na)&&!isNaN(nb)&&String(va).trim()!==""&&String(vb).trim()!=="")return(na-nb)*sortDir;
     return String(va).localeCompare(String(vb),undefined,{numeric:true})*sortDir;});
   document.getElementById("countLine").textContent=`${list.length} / ${mtasks().length} tasks`;
-  let h="<thead><tr>"+cols.map(c=>`<th class="sortable ${sortKey===c[0]?(sortDir>0?"sorted-asc":"sorted-desc"):""}" tabindex="0" data-k="${c[0]}">${c[1]}</th>`).join("")+`<th class="c">Jira status</th><th class="c">Jira assignee</th><th class=c>Month</th></tr></thead><tbody>`;
+  let h="<thead><tr>"+cols.map(c=>`<th class="sortable ${sortKey===c[0]?(sortDir>0?"sorted-asc":"sorted-desc"):""}" tabindex="0" data-k="${c[0]}">${c[1]}</th>`).join("")+`<th class="c">Jira status</th><th class=c>Month</th></tr></thead><tbody>`;
   for(const t of list){
-    const p=prog(t),st=statusOf(t),ji=t.jira&&jiraInfo[t.jira];
+    const p=prog(t),ji=t.jira&&jiraInfo[t.jira];
     h+=`<tr class="${t.source==="ADDED-web"?"newrow":""}">
      <td><button class="codebtn num" data-code="${t.code}">${t.code}</button></td>
      <td>${t.jira?`<a href="https://tradewize.atlassian.net/browse/${t.jira}" target="_blank" rel="noopener">${t.jira}</a>`:"-"}</td>
-     <td style="min-width:250px">${t.name}</td>
+     <td style="min-width:250px"><button class="tname" data-code="${t.code}">${t.name}</button></td>
      <td class="c"><span class="tag ${t.team==="Refactor"?"ref":"cur"}">${t.team}</span></td>
      <td class="c"><span class="tag ${t.type==="Bug"?"bug":"feature"}">${t.type}</span></td>
      <td class="c"><select data-code="${t.code}" data-f="priority">${["P0","P1","P2","P3","STG"].map(x=>`<option ${x===t.priority?"selected":""}>${x}</option>`).join("")}</select></td>
@@ -798,14 +801,12 @@ function renderBacklog(){
      <td class="r num">${t.est_ai_md}</td>
      <td class="c"><input class="est num" inputmode="decimal" data-code="${t.code}" data-f="est_actual_md" value="${t.est_actual_md??""}" placeholder="${t.est_ai_md}"></td>
      <td class="c"><input class="prog num" inputmode="numeric" data-code="${t.code}" data-f="progress" value="${p}"></td>
-     <td class="c"><span class="tag status-${st==="risk"?"doing":st}">${st==="risk"?"at risk":st==="doing"?"in progress":st==="todo"?"not started":st}</span></td>
      <td class="c"><span class="tag plain">${ji?.status||"-"}</span></td>
-     <td class="c sub">${ji?.assignee||"-"}</td>
      <td class="c"><select data-code="${t.code}" data-f="month">${state.months.map(m=>`<option ${m.id===t.month?"selected":""}>${m.id}</option>`).join("")}</select></td></tr>`;
   }
   const el=document.getElementById("blTable"); el.innerHTML=h+"</tbody>";
   el.querySelectorAll("th.sortable").forEach(th=>th.onclick=()=>{const k=th.dataset.k;sortDir=(sortKey===k)?-sortDir:1;sortKey=k;renderBacklog();});
-  el.querySelectorAll(".codebtn").forEach(b=>b.onclick=()=>openTask(b.dataset.code));
+  el.querySelectorAll(".codebtn,.tname").forEach(b=>b.onclick=()=>openTask(b.dataset.code));
   el.querySelectorAll("select[data-f],input[data-f]").forEach(inp=>{
     inp.onchange=()=>{
       const t=state.tasks.find(x=>x.code===inp.dataset.code); if(!t)return;
