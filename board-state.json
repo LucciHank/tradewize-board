@@ -257,13 +257,10 @@
       "tag": "Timezone",
       "month": "T7",
       "week": "W1",
-      "owners": [
-        "Anh Thái (Thai Tran Van)",
-        "Lương"
-      ],
+      "owners": [],
       "est_ai_md": 4.5,
       "est_actual_md": null,
-      "progress": 20,
+      "progress": 0,
       "note": "Consolidate all timezone tickets under epic TD-126; fix the core helper instead of ~84 call sites",
       "source": "Feroz",
       "owner_updated_at": "2026-07-07T05:31:09.360Z"
@@ -279,9 +276,7 @@
       "month": "T7",
       "week": "W1",
       "owners": [
-        "Anh Hậu",
-        "Anh Hoàng",
-        "Hoàng Anh"
+        "Hậu"
       ],
       "est_ai_md": 3,
       "est_actual_md": null,
@@ -301,7 +296,7 @@
       "month": "T7",
       "week": "W1",
       "owners": [
-        "Anh Hậu"
+        "Hậu"
       ],
       "est_ai_md": 3,
       "est_actual_md": null,
@@ -324,7 +319,7 @@
       ],
       "est_ai_md": 1.75,
       "est_actual_md": null,
-      "progress": 0,
+      "progress": 60,
       "note": "",
       "source": "Feroz"
     },
@@ -338,10 +333,12 @@
       "tag": "How-to",
       "month": "T7",
       "week": "W1",
-      "owners": [],
+      "owners": [
+        "Lương"
+      ],
       "est_ai_md": 1.25,
       "est_actual_md": null,
-      "progress": 0,
+      "progress": 40,
       "note": "Shares root cause with TD-155 (report tables); fix together",
       "source": "Feroz"
     },
@@ -356,11 +353,11 @@
       "month": "T7",
       "week": "W1",
       "owners": [
-        "Lương"
+        "Đạt"
       ],
       "est_ai_md": 0.25,
       "est_actual_md": null,
-      "progress": 0,
+      "progress": 20,
       "note": "",
       "source": "Feroz"
     },
@@ -459,12 +456,10 @@
       "tag": "Timezone",
       "month": "T7",
       "week": "W1",
-      "owners": [
-        "Anh Thái (Thai Tran Van)"
-      ],
+      "owners": [],
       "est_ai_md": 4.5,
       "est_actual_md": null,
-      "progress": 20,
+      "progress": 0,
       "note": "",
       "source": "Feroz",
       "owner_updated_at": "2026-07-07T06:54:30.568Z"
@@ -496,7 +491,9 @@
       "tag": "PO & Pay",
       "month": "T7",
       "week": "W1",
-      "owners": [],
+      "owners": [
+        "Hoàng Anh"
+      ],
       "est_ai_md": 2.25,
       "est_actual_md": null,
       "progress": 0,
@@ -530,10 +527,12 @@
       "tag": "Export/Nav",
       "month": "T7",
       "week": "W1",
-      "owners": [],
+      "owners": [
+        "Lương"
+      ],
       "est_ai_md": 2,
       "est_actual_md": null,
-      "progress": 0,
+      "progress": 40,
       "note": "Needs clarification with the client",
       "source": "Feroz"
     },
@@ -552,7 +551,7 @@
       ],
       "est_ai_md": 1.25,
       "est_actual_md": null,
-      "progress": 20,
+      "progress": 0,
       "note": "",
       "source": "Feroz"
     },
@@ -571,7 +570,7 @@
       ],
       "est_ai_md": 0.5,
       "est_actual_md": null,
-      "progress": 0,
+      "progress": 100,
       "note": "",
       "source": "Feroz"
     },
@@ -585,7 +584,9 @@
       "tag": "Supplier",
       "month": "T7",
       "week": "W1",
-      "owners": [],
+      "owners": [
+        "Hoàng Anh"
+      ],
       "est_ai_md": 2.25,
       "est_actual_md": null,
       "progress": 0,
@@ -602,7 +603,9 @@
       "tag": "LD/Logs",
       "month": "T7",
       "week": "W1",
-      "owners": [],
+      "owners": [
+        "Hoàng Anh"
+      ],
       "est_ai_md": 1.25,
       "est_actual_md": null,
       "progress": 0,
@@ -620,10 +623,12 @@
       "tag": "LD/Logs",
       "month": "T7",
       "week": "W1",
-      "owners": [],
+      "owners": [
+        "Nguyên"
+      ],
       "est_ai_md": 0.5,
       "est_actual_md": null,
-      "progress": 0,
+      "progress": 60,
       "note": "Duplicate of TD-139; link as duplicate",
       "source": "Feroz"
     },
@@ -671,10 +676,12 @@
       "tag": "Permissions",
       "month": "T7",
       "week": "W1",
-      "owners": [],
+      "owners": [
+        "Quang Hoàng"
+      ],
       "est_ai_md": 4.5,
       "est_actual_md": null,
-      "progress": 0,
+      "progress": 20,
       "note": "S4 merges into F12; related to TD-77/96",
       "source": "Feroz"
     },
@@ -693,7 +700,7 @@
       ],
       "est_ai_md": 2.75,
       "est_actual_md": null,
-      "progress": 0,
+      "progress": 40,
       "note": "Needs clarification with the client",
       "source": "Feroz"
     },
@@ -710,7 +717,7 @@
       "owners": [],
       "est_ai_md": 2.5,
       "est_actual_md": null,
-      "progress": 0,
+      "progress": 100,
       "note": "Duplicate of TD-138; link as duplicate",
       "source": "Feroz"
     },
@@ -724,10 +731,12 @@
       "tag": "LD/Logs",
       "month": "T7",
       "week": "W1",
-      "owners": [],
+      "owners": [
+        "Hoàng Anh"
+      ],
       "est_ai_md": 0.5,
       "est_actual_md": null,
-      "progress": 0,
+      "progress": 20,
       "note": "",
       "source": "Feroz"
     },
@@ -746,7 +755,7 @@
       ],
       "est_ai_md": 0.5,
       "est_actual_md": null,
-      "progress": 0,
+      "progress": 40,
       "note": "TD-154 covers this only partially; needs a scoped child ticket",
       "source": "Feroz",
       "owner_updated_at": "2026-07-07T08:13:33.054Z"
@@ -761,10 +770,12 @@
       "tag": "LD/Logs",
       "month": "T7",
       "week": "W1",
-      "owners": [],
+      "owners": [
+        "Nguyên"
+      ],
       "est_ai_md": 0.5,
       "est_actual_md": null,
-      "progress": 0,
+      "progress": 60,
       "note": "",
       "source": "Feroz"
     },
@@ -812,12 +823,15 @@
       "tag": "OCR",
       "month": "T7",
       "week": "W1",
-      "owners": [],
+      "owners": [
+        "Vũ"
+      ],
       "est_ai_md": 3,
       "est_actual_md": null,
-      "progress": 0,
+      "progress": 100,
       "note": "Related to TD-146/133; W-9 scope to be confirmed with the client",
-      "source": "Feroz"
+      "source": "Feroz",
+      "owner_updated_at": "2026-07-12T04:15:16.136Z"
     },
     {
       "code": "F6",
@@ -832,7 +846,7 @@
       "owners": [],
       "est_ai_md": 0.75,
       "est_actual_md": null,
-      "progress": 0,
+      "progress": 20,
       "note": "Duplicate of TD-72; conflicts with TD-158 (restrict Cut Guy), confirm with client first",
       "source": "Feroz"
     },
@@ -863,7 +877,9 @@
       "tag": "2FA",
       "month": "T7",
       "week": "W4",
-      "owners": [],
+      "owners": [
+        "Hoàng Anh"
+      ],
       "est_ai_md": 2.25,
       "est_actual_md": null,
       "progress": 0,
@@ -897,10 +913,12 @@
       "tag": "OCR",
       "month": "T7",
       "week": "W4",
-      "owners": [],
+      "owners": [
+        "Đạt"
+      ],
       "est_ai_md": 1.25,
       "est_actual_md": null,
-      "progress": 0,
+      "progress": 20,
       "note": "Duplicate of TD-57; link as duplicate",
       "source": "Feroz"
     },
@@ -914,7 +932,9 @@
       "tag": "Docs DB",
       "month": "T7",
       "week": "W4",
-      "owners": [],
+      "owners": [
+        "Lực"
+      ],
       "est_ai_md": 3.25,
       "est_actual_md": null,
       "progress": 0,
